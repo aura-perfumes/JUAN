@@ -1494,44 +1494,26 @@ input,textarea,select{font-family:inherit}
           <input class="config-input" type="text" id="ap-size" placeholder="35 ml · EDP" value="35 ml · EDP"/>
         </div>
         <div class="ap-full">
-          <div class="img-source-tabs">
-            <button type="button" class="img-tab active" id="tab-url" onclick="Dash.switchImgTab('url')">🔗 URL de imagen</button>
-            <button type="button" class="img-tab" id="tab-file" onclick="Dash.switchImgTab('file')">📁 Archivo local</button>
-          </div>
-
-          <!-- URL mode (default + recomendado) -->
-          <div id="img-mode-url">
-            <div class="ap-url-grid">
-              <div>
-                <label class="config-label">URL imagen principal *</label>
-                <input class="config-input" type="url" id="ap-img1-url" placeholder="https://i.imgur.com/ejemplo.jpg" oninput="Dash.previewUrl(this.value,'ap-img1-preview-url')"/>
-                <div class="img-preview" id="ap-img1-preview-url">Vista previa</div>
-              </div>
-              <div>
-                <label class="config-label">URL imagen secundaria</label>
-                <input class="config-input" type="url" id="ap-img2-url" placeholder="https://i.imgur.com/ejemplo2.jpg" oninput="Dash.previewUrl(this.value,'ap-img2-preview-url')"/>
-                <div class="img-preview" id="ap-img2-preview-url">Vista previa</div>
-              </div>
+          <div class="ap-url-grid">
+            <div>
+              <label class="config-label">URL imagen principal</label>
+              <input class="config-input" type="url" id="ap-img1-url" placeholder="https://i.imgur.com/ejemplo.jpg" oninput="Dash.previewUrl(this.value,'ap-img1-preview-url')"/>
+              <div class="img-preview" id="ap-img1-preview-url">Vista previa</div>
             </div>
-            <div class="url-hint">✅ Recomendado: las URLs se sincronizan en todos los dispositivos sin límite de tamaño. Podés usar <strong>Imgur</strong>, Google Drive (link directo), Cloudinary, o cualquier URL pública.</div>
-          </div>
-
-          <!-- File mode -->
-          <div id="img-mode-file" style="display:none">
-            <div class="img-upload-grid">
-              <div class="img-upload-card">
-                <label class="config-label">Imagen principal</label>
-                <label class="file-pill">Cargar imagen<input type="file" id="ap-img1" accept="image/*" onchange="Dash.previewProductImage(event,'ap-img1-preview')"/></label>
-                <div class="img-preview" id="ap-img1-preview">Portada del producto</div>
-              </div>
-              <div class="img-upload-card">
-                <label class="config-label">Imagen secundaria</label>
-                <label class="file-pill">Cargar imagen<input type="file" id="ap-img2" accept="image/*" onchange="Dash.previewProductImage(event,'ap-img2-preview')"/></label>
-                <div class="img-preview" id="ap-img2-preview">Imagen extra para carrusel</div>
-              </div>
+            <div>
+              <label class="config-label">URL imagen secundaria</label>
+              <input class="config-input" type="url" id="ap-img2-url" placeholder="https://i.imgur.com/ejemplo2.jpg" oninput="Dash.previewUrl(this.value,'ap-img2-preview-url')"/>
+              <div class="img-preview" id="ap-img2-preview-url">Vista previa</div>
             </div>
-            <div class="url-hint" style="color:#f59e0b">⚠ Los archivos locales se guardan solo en este dispositivo y pueden superar el límite de Firestore con muchos productos.</div>
           </div>
+          <div class="url-hint">Pegá el link directo de la imagen (Imgur, Google Drive, Cloudinary, etc.)</div>
+          <!-- Hidden inputs kept for backward compat -->
+          <input type="hidden" id="ap-img1"/>
+          <input type="hidden" id="ap-img2"/>
+          <div style="display:none" id="ap-img1-preview"></div>
+          <div style="display:none" id="ap-img2-preview"></div>
+          <div style="display:none" id="img-mode-url"></div>
+          <div style="display:none" id="img-mode-file"></div>
         </div>
       </div>
       <div style="margin-top:1.1rem;display:flex;gap:.75rem">
@@ -1709,13 +1691,6 @@ const Dash={
     const u2=document.getElementById('ap-img2-url');if(u2)u2.value='';
     const pu1=document.getElementById('ap-img1-preview-url');if(pu1){pu1.style.backgroundImage='';pu1.textContent='Vista previa';}
     const pu2=document.getElementById('ap-img2-preview-url');if(pu2){pu2.style.backgroundImage='';pu2.textContent='Vista previa';}
-    // Reset file fields
-    const f1=document.getElementById('ap-img1');if(f1)f1.value='';
-    const f2=document.getElementById('ap-img2');if(f2)f2.value='';
-    const p1=document.getElementById('ap-img1-preview');if(p1){p1.style.backgroundImage='';p1.textContent='Portada del producto';}
-    const p2=document.getElementById('ap-img2-preview');if(p2){p2.style.backgroundImage='';p2.textContent='Imagen extra para carrusel';}
-    // Default to URL mode
-    this.switchImgTab('url');
     document.getElementById('ap-modal').classList.add('active');
   },
   closeAddProduct(){document.getElementById('ap-modal').classList.remove('active')},
@@ -1740,20 +1715,11 @@ const Dash={
   },
   previewProductImage(evt,previewId){const file=evt.target.files?.[0];if(!file)return;const fr=new FileReader();fr.onload=()=>{const box=document.getElementById(previewId);box.style.backgroundImage=`url('${fr.result}')`;box.textContent=''};fr.readAsDataURL(file)},
   async getProductImagesFromInputs(existing=[]){
-    // Check which mode is active
-    const urlMode = document.getElementById('img-mode-url')?.style.display !== 'none';
     const out = [...(existing||[])];
-    if(urlMode){
-      const url1 = (document.getElementById('ap-img1-url')?.value||'').trim();
-      const url2 = (document.getElementById('ap-img2-url')?.value||'').trim();
-      if(url1) out[0] = url1;
-      if(url2) out[1] = url2;
-    } else {
-      const img1 = document.getElementById('ap-img1')?.files?.[0];
-      const img2 = document.getElementById('ap-img2')?.files?.[0];
-      if(img1) out[0] = await readFileAsDataURL(img1);
-      if(img2) out[1] = await readFileAsDataURL(img2);
-    }
+    const url1 = (document.getElementById('ap-img1-url')?.value||'').trim();
+    const url2 = (document.getElementById('ap-img2-url')?.value||'').trim();
+    if(url1) out[0] = url1;
+    if(url2) out[1] = url2;
     return out.filter(Boolean).slice(0,2);
   },
   editProduct(id){
@@ -1771,25 +1737,13 @@ const Dash={
     document.getElementById('ap-badge').value=p.badge||'';
     document.getElementById('ap-desc').value=p.desc||'';
     document.getElementById('ap-size').value=p.size||'35 ml · EDP';
-    // Populate images — detect if URL or base64
+    // Populate URL image fields
     const img0=p.images?.[0]||'';
     const img1=p.images?.[1]||'';
-    const isUrl = s => s.startsWith('http');
-    if(isUrl(img0)||isUrl(img1)||(!img0&&!img1)){
-      // URL mode
-      this.switchImgTab('url');
-      const u1=document.getElementById('ap-img1-url');if(u1)u1.value=img0;
-      const u2=document.getElementById('ap-img2-url');if(u2)u2.value=img1;
-      this.previewUrl(img0,'ap-img1-preview-url');
-      this.previewUrl(img1,'ap-img2-preview-url');
-    } else {
-      // File/base64 mode
-      this.switchImgTab('file');
-      const p1=document.getElementById('ap-img1-preview');
-      if(p1){p1.style.backgroundImage=img0?`url('${img0}')`:'';p1.textContent=img0?'':'Portada del producto';}
-      const p2=document.getElementById('ap-img2-preview');
-      if(p2){p2.style.backgroundImage=img1?`url('${img1}')`:'';p2.textContent=img1?'':'Imagen extra para carrusel';}
-    }
+    const u1=document.getElementById('ap-img1-url');if(u1)u1.value=img0;
+    const u2=document.getElementById('ap-img2-url');if(u2)u2.value=img1;
+    this.previewUrl(img0,'ap-img1-preview-url');
+    this.previewUrl(img1,'ap-img2-preview-url');
     document.getElementById('ap-modal').classList.add('active');
   },
   async saveProduct(){const name=document.getElementById('ap-name').value.trim();const price=parseInt(document.getElementById('ap-price').value)||0;if(!name||!price){showToast('Completá el nombre y el precio.',true);return}const editId=document.getElementById('ap-edit-id').value;const existing=editId?PRODUCTS.find(p=>p.id===editId)?.images||[]:[];const prod={id:editId||'prod-'+Date.now(),name,cat:document.getElementById('ap-cat').value,cat2:document.getElementById('ap-cat2').value||'',price,stock:parseInt(document.getElementById('ap-stock').value)||0,emoji:document.getElementById('ap-emoji').value||'🌸',badge:document.getElementById('ap-badge').value||null,desc:document.getElementById('ap-desc').value.trim()||'Fragancia destacada de AURA.',size:document.getElementById('ap-size').value.trim()||'35 ml · EDP',images:await this.getProductImagesFromInputs(existing)};if(editId){const idx=PRODUCTS.findIndex(p=>p.id===editId);if(idx>=0)PRODUCTS[idx]=prod}else PRODUCTS.push(prod);saveProductsLS();this.closeAddProduct();this.renderInventory();this.updatePanelKPIs();renderProducts()},
