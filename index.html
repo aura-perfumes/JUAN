@@ -537,6 +537,14 @@ input,textarea,select{font-family:inherit}
 .ap-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
 .ap-full{grid-column:1/-1}
 
+.img-source-tabs{display:flex;gap:.5rem;margin-bottom:.9rem}
+.img-tab{border:1px solid var(--border);border-radius:8px;padding:.42rem .9rem;font-size:.68rem;font-weight:600;background:#fff;color:var(--muted);cursor:pointer;transition:all var(--trans)}
+.img-tab.active{background:var(--text);color:#fff;border-color:var(--text)}
+.ap-url-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.6rem}
+@media(max-width:600px){.ap-url-grid{grid-template-columns:1fr}}
+.url-hint{font-size:.65rem;color:var(--green);line-height:1.5;margin-top:.4rem}
+.url-hint strong{font-weight:700}
+
 .btn-wa{
   width:100%;background:#25D366;color:#fff;border:none;border-radius:10px;
   padding:.9rem;font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
@@ -1485,16 +1493,44 @@ input,textarea,select{font-family:inherit}
           <label class="config-label">Tamaño visible</label>
           <input class="config-input" type="text" id="ap-size" placeholder="35 ml · EDP" value="35 ml · EDP"/>
         </div>
-        <div class="ap-full img-upload-grid">
-          <div class="img-upload-card">
-            <label class="config-label">Imagen principal</label>
-            <label class="file-pill">Cargar imagen principal<input type="file" id="ap-img1" accept="image/*" onchange="Dash.previewProductImage(event,'ap-img1-preview')"/></label>
-            <div class="img-preview" id="ap-img1-preview">Portada del producto</div>
+        <div class="ap-full">
+          <div class="img-source-tabs">
+            <button type="button" class="img-tab active" id="tab-url" onclick="Dash.switchImgTab('url')">🔗 URL de imagen</button>
+            <button type="button" class="img-tab" id="tab-file" onclick="Dash.switchImgTab('file')">📁 Archivo local</button>
           </div>
-          <div class="img-upload-card">
-            <label class="config-label">Imagen secundaria</label>
-            <label class="file-pill">Cargar imagen secundaria<input type="file" id="ap-img2" accept="image/*" onchange="Dash.previewProductImage(event,'ap-img2-preview')"/></label>
-            <div class="img-preview" id="ap-img2-preview">Imagen extra para carrusel</div>
+
+          <!-- URL mode (default + recomendado) -->
+          <div id="img-mode-url">
+            <div class="ap-url-grid">
+              <div>
+                <label class="config-label">URL imagen principal *</label>
+                <input class="config-input" type="url" id="ap-img1-url" placeholder="https://i.imgur.com/ejemplo.jpg" oninput="Dash.previewUrl(this.value,'ap-img1-preview-url')"/>
+                <div class="img-preview" id="ap-img1-preview-url">Vista previa</div>
+              </div>
+              <div>
+                <label class="config-label">URL imagen secundaria</label>
+                <input class="config-input" type="url" id="ap-img2-url" placeholder="https://i.imgur.com/ejemplo2.jpg" oninput="Dash.previewUrl(this.value,'ap-img2-preview-url')"/>
+                <div class="img-preview" id="ap-img2-preview-url">Vista previa</div>
+              </div>
+            </div>
+            <div class="url-hint">✅ Recomendado: las URLs se sincronizan en todos los dispositivos sin límite de tamaño. Podés usar <strong>Imgur</strong>, Google Drive (link directo), Cloudinary, o cualquier URL pública.</div>
+          </div>
+
+          <!-- File mode -->
+          <div id="img-mode-file" style="display:none">
+            <div class="img-upload-grid">
+              <div class="img-upload-card">
+                <label class="config-label">Imagen principal</label>
+                <label class="file-pill">Cargar imagen<input type="file" id="ap-img1" accept="image/*" onchange="Dash.previewProductImage(event,'ap-img1-preview')"/></label>
+                <div class="img-preview" id="ap-img1-preview">Portada del producto</div>
+              </div>
+              <div class="img-upload-card">
+                <label class="config-label">Imagen secundaria</label>
+                <label class="file-pill">Cargar imagen<input type="file" id="ap-img2" accept="image/*" onchange="Dash.previewProductImage(event,'ap-img2-preview')"/></label>
+                <div class="img-preview" id="ap-img2-preview">Imagen extra para carrusel</div>
+              </div>
+            </div>
+            <div class="url-hint" style="color:#f59e0b">⚠ Los archivos locales se guardan solo en este dispositivo y pueden superar el límite de Firestore con muchos productos.</div>
           </div>
         </div>
       </div>
@@ -1575,7 +1611,13 @@ function slugify(v){return String(v||'').toLowerCase().normalize('NFD').replace(
 function safeParse(key,fallback){try{const r=localStorage.getItem(key);return r?JSON.parse(r):fallback}catch(e){return fallback}}
 function saveJSON(key,value){localStorage.setItem(key,JSON.stringify(value))}
 function loadProducts(){const items=safeParse('aura_products',null);return (items&&Array.isArray(items)&&items.length?items:DEFAULT_PRODUCTS).map(p=>({...p,images:Array.isArray(p.images)?p.images:[],size:p.size||'35 ml · EDP',desc:p.desc||'Fragancia destacada de AURA.'}))}
-function saveProductsLS(){saveJSON('aura_products',PRODUCTS)}
+function saveProductsLS(){
+  saveJSON('aura_products',PRODUCTS);
+  // Also cache images separately to survive Firestore sync
+  const imgMap={};
+  PRODUCTS.forEach(p=>{if(p.images&&p.images.length)imgMap[p.id]=p.images;});
+  try{localStorage.setItem('aura_product_images',JSON.stringify(imgMap));}catch(e){}
+}
 function loadOrders(){return safeParse('aura_orders',[])}
 function saveOrdersLS(){saveJSON('aura_orders',ORDERS)}
 function loadCustomers(){return safeParse('aura_customers',[])}
@@ -1654,11 +1696,102 @@ const Dash={
   updatePanelKPIs(){const valor=PRODUCTS.reduce((s,p)=>s+p.price*(p.stock||0),0);const skus=PRODUCTS.reduce((s,p)=>s+(p.stock||0),0);const ingresos=ORDERS.reduce((s,o)=>s+o.total,0);document.getElementById('kpi-skus').textContent=skus;document.getElementById('kpi-valor').textContent='$'+valor.toLocaleString('es-AR');document.getElementById('kpi-ingresos').textContent='$'+ingresos.toLocaleString('es-AR');document.getElementById('kpi-ingresos-sub').textContent=ORDERS.length?`↗ ${ORDERS.length} pedidos registrados`:'↗ Sin datos aún'},
   populateProductSelects(){const catSel=document.getElementById('ap-cat');if(catSel){catSel.innerHTML=TAXONOMY.categories.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('')}const parent=document.getElementById('tax-parent-cat');if(parent){parent.innerHTML=TAXONOMY.categories.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('')}this.syncSubcategorySelect()},
   syncSubcategorySelect(){const catId=document.getElementById('ap-cat')?.value||TAXONOMY.categories[0]?.id||'';const subSel=document.getElementById('ap-cat2');if(!subSel)return;const subs=getSubcategoriesByCategory(catId);subSel.innerHTML=`<option value="">Sin subcategoría</option>`+subs.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('')},
-  openAddProduct(){document.getElementById('ap-title').textContent='Nueva Fragancia';document.getElementById('ap-edit-id').value='';['ap-name','ap-emoji','ap-badge','ap-desc'].forEach(id=>document.getElementById(id).value='');document.getElementById('ap-price').value='';document.getElementById('ap-stock').value='5';document.getElementById('ap-size').value='35 ml · EDP';this.populateProductSelects();document.getElementById('ap-img1').value='';document.getElementById('ap-img2').value='';document.getElementById('ap-img1-preview').style.backgroundImage='';document.getElementById('ap-img1-preview').textContent='Portada del producto';document.getElementById('ap-img2-preview').style.backgroundImage='';document.getElementById('ap-img2-preview').textContent='Imagen extra para carrusel';document.getElementById('ap-modal').classList.add('active')},
+  openAddProduct(){
+    document.getElementById('ap-title').textContent='Nueva Fragancia';
+    document.getElementById('ap-edit-id').value='';
+    ['ap-name','ap-emoji','ap-badge','ap-desc'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('ap-price').value='';
+    document.getElementById('ap-stock').value='5';
+    document.getElementById('ap-size').value='35 ml · EDP';
+    this.populateProductSelects();
+    // Reset URL fields
+    const u1=document.getElementById('ap-img1-url');if(u1)u1.value='';
+    const u2=document.getElementById('ap-img2-url');if(u2)u2.value='';
+    const pu1=document.getElementById('ap-img1-preview-url');if(pu1){pu1.style.backgroundImage='';pu1.textContent='Vista previa';}
+    const pu2=document.getElementById('ap-img2-preview-url');if(pu2){pu2.style.backgroundImage='';pu2.textContent='Vista previa';}
+    // Reset file fields
+    const f1=document.getElementById('ap-img1');if(f1)f1.value='';
+    const f2=document.getElementById('ap-img2');if(f2)f2.value='';
+    const p1=document.getElementById('ap-img1-preview');if(p1){p1.style.backgroundImage='';p1.textContent='Portada del producto';}
+    const p2=document.getElementById('ap-img2-preview');if(p2){p2.style.backgroundImage='';p2.textContent='Imagen extra para carrusel';}
+    // Default to URL mode
+    this.switchImgTab('url');
+    document.getElementById('ap-modal').classList.add('active');
+  },
   closeAddProduct(){document.getElementById('ap-modal').classList.remove('active')},
+  switchImgTab(mode){
+    document.getElementById('img-mode-url').style.display = mode==='url' ? '' : 'none';
+    document.getElementById('img-mode-file').style.display = mode==='file' ? '' : 'none';
+    document.getElementById('tab-url').classList.toggle('active', mode==='url');
+    document.getElementById('tab-file').classList.toggle('active', mode==='file');
+  },
+  previewUrl(url, previewId){
+    const box = document.getElementById(previewId);
+    if(!box) return;
+    if(url && url.startsWith('http')){
+      box.style.backgroundImage = `url('${url}')`;
+      box.style.backgroundSize = 'cover';
+      box.style.backgroundPosition = 'center';
+      box.textContent = '';
+    } else {
+      box.style.backgroundImage = '';
+      box.textContent = 'Vista previa';
+    }
+  },
   previewProductImage(evt,previewId){const file=evt.target.files?.[0];if(!file)return;const fr=new FileReader();fr.onload=()=>{const box=document.getElementById(previewId);box.style.backgroundImage=`url('${fr.result}')`;box.textContent=''};fr.readAsDataURL(file)},
-  async getProductImagesFromInputs(existing=[]){const img1=document.getElementById('ap-img1').files?.[0];const img2=document.getElementById('ap-img2').files?.[0];const out=[...(existing||[])];if(img1)out[0]=await readFileAsDataURL(img1);if(img2)out[1]=await readFileAsDataURL(img2);return out.filter(Boolean).slice(0,2)},
-  editProduct(id){const p=PRODUCTS.find(x=>x.id===id);if(!p)return;this.populateProductSelects();document.getElementById('ap-title').textContent='Editar Fragancia';document.getElementById('ap-edit-id').value=id;document.getElementById('ap-name').value=p.name;document.getElementById('ap-cat').value=p.cat;this.syncSubcategorySelect();document.getElementById('ap-cat2').value=p.cat2||'';document.getElementById('ap-price').value=p.price;document.getElementById('ap-stock').value=p.stock||0;document.getElementById('ap-emoji').value=p.emoji||'';document.getElementById('ap-badge').value=p.badge||'';document.getElementById('ap-desc').value=p.desc||'';document.getElementById('ap-size').value=p.size||'35 ml · EDP';document.getElementById('ap-img1-preview').style.backgroundImage=p.images?.[0]?`url('${p.images[0]}')`:'';document.getElementById('ap-img1-preview').textContent=p.images?.[0]?'':'Portada del producto';document.getElementById('ap-img2-preview').style.backgroundImage=p.images?.[1]?`url('${p.images[1]}')`:'';document.getElementById('ap-img2-preview').textContent=p.images?.[1]?'':'Imagen extra para carrusel';document.getElementById('ap-modal').classList.add('active')},
+  async getProductImagesFromInputs(existing=[]){
+    // Check which mode is active
+    const urlMode = document.getElementById('img-mode-url')?.style.display !== 'none';
+    const out = [...(existing||[])];
+    if(urlMode){
+      const url1 = (document.getElementById('ap-img1-url')?.value||'').trim();
+      const url2 = (document.getElementById('ap-img2-url')?.value||'').trim();
+      if(url1) out[0] = url1;
+      if(url2) out[1] = url2;
+    } else {
+      const img1 = document.getElementById('ap-img1')?.files?.[0];
+      const img2 = document.getElementById('ap-img2')?.files?.[0];
+      if(img1) out[0] = await readFileAsDataURL(img1);
+      if(img2) out[1] = await readFileAsDataURL(img2);
+    }
+    return out.filter(Boolean).slice(0,2);
+  },
+  editProduct(id){
+    const p=PRODUCTS.find(x=>x.id===id);if(!p)return;
+    this.populateProductSelects();
+    document.getElementById('ap-title').textContent='Editar Fragancia';
+    document.getElementById('ap-edit-id').value=id;
+    document.getElementById('ap-name').value=p.name;
+    document.getElementById('ap-cat').value=p.cat;
+    this.syncSubcategorySelect();
+    document.getElementById('ap-cat2').value=p.cat2||'';
+    document.getElementById('ap-price').value=p.price;
+    document.getElementById('ap-stock').value=p.stock||0;
+    document.getElementById('ap-emoji').value=p.emoji||'';
+    document.getElementById('ap-badge').value=p.badge||'';
+    document.getElementById('ap-desc').value=p.desc||'';
+    document.getElementById('ap-size').value=p.size||'35 ml · EDP';
+    // Populate images — detect if URL or base64
+    const img0=p.images?.[0]||'';
+    const img1=p.images?.[1]||'';
+    const isUrl = s => s.startsWith('http');
+    if(isUrl(img0)||isUrl(img1)||(!img0&&!img1)){
+      // URL mode
+      this.switchImgTab('url');
+      const u1=document.getElementById('ap-img1-url');if(u1)u1.value=img0;
+      const u2=document.getElementById('ap-img2-url');if(u2)u2.value=img1;
+      this.previewUrl(img0,'ap-img1-preview-url');
+      this.previewUrl(img1,'ap-img2-preview-url');
+    } else {
+      // File/base64 mode
+      this.switchImgTab('file');
+      const p1=document.getElementById('ap-img1-preview');
+      if(p1){p1.style.backgroundImage=img0?`url('${img0}')`:'';p1.textContent=img0?'':'Portada del producto';}
+      const p2=document.getElementById('ap-img2-preview');
+      if(p2){p2.style.backgroundImage=img1?`url('${img1}')`:'';p2.textContent=img1?'':'Imagen extra para carrusel';}
+    }
+    document.getElementById('ap-modal').classList.add('active');
+  },
   async saveProduct(){const name=document.getElementById('ap-name').value.trim();const price=parseInt(document.getElementById('ap-price').value)||0;if(!name||!price){showToast('Completá el nombre y el precio.',true);return}const editId=document.getElementById('ap-edit-id').value;const existing=editId?PRODUCTS.find(p=>p.id===editId)?.images||[]:[];const prod={id:editId||'prod-'+Date.now(),name,cat:document.getElementById('ap-cat').value,cat2:document.getElementById('ap-cat2').value||'',price,stock:parseInt(document.getElementById('ap-stock').value)||0,emoji:document.getElementById('ap-emoji').value||'🌸',badge:document.getElementById('ap-badge').value||null,desc:document.getElementById('ap-desc').value.trim()||'Fragancia destacada de AURA.',size:document.getElementById('ap-size').value.trim()||'35 ml · EDP',images:await this.getProductImagesFromInputs(existing)};if(editId){const idx=PRODUCTS.findIndex(p=>p.id===editId);if(idx>=0)PRODUCTS[idx]=prod}else PRODUCTS.push(prod);saveProductsLS();this.closeAddProduct();this.renderInventory();this.updatePanelKPIs();renderProducts()},
   deleteProduct(id){if(!window.confirm('¿Eliminar esta fragancia?'))return;PRODUCTS=PRODUCTS.filter(p=>p.id!==id);saveProductsLS();this.renderInventory();this.updatePanelKPIs();renderProducts()},
   saveWA(){const num=document.getElementById('cfg-wa-num').value.trim();if(!num){showToast('Ingresá el número.',true);return}STORE.waNum=num;STORE.waName=document.getElementById('cfg-wa-name').value.trim()||STORE.waName;config.waNum=STORE.waNum;saveStoreConfig();showToast('WhatsApp guardado ✓');},
@@ -1801,7 +1934,15 @@ function applyNosotrosData(vals){
 function rerenderSyncedKey(key){
   try{
     if(key === 'products'){
-      PRODUCTS = Array.isArray(LS.get('products')) ? LS.get('products') : PRODUCTS;
+      const raw = LS.get('products');
+      if(Array.isArray(raw)){
+        // Merge Firestore data with locally-stored images
+        const localImgs = safeGetLocalImages();
+        PRODUCTS = raw.map(p => ({
+          ...p,
+          images: (p.images && p.images.length) ? p.images : (localImgs[p.id] || [])
+        }));
+      }
       renderProducts();
       Dash.renderInventory();
       Dash.updatePanelKPIs();
@@ -1845,12 +1986,25 @@ function rerenderSyncedKey(key){
   const timers = {};
 
   function safeClone(v){ return JSON.parse(JSON.stringify(v)); }
+  function safeGetLocalImages(){
+    try{ return JSON.parse(localStorage.getItem('aura_product_images')||'{}'); }
+    catch(e){ return {}; }
+  }
   function docRef(key){ return db.collection('aura_sync').doc(key); }
 
   async function pushKey(key){
     try{
+      let value = safeClone(LS.get(key));
+      // Strip base64 images before pushing to Firestore (1MB doc limit)
+      // URL images are kept (they're just text, no size issue)
+      if(key === 'products' && Array.isArray(value)){
+        value = value.map(p => {
+          const cleanImgs = (p.images||[]).filter(img => img && img.startsWith('http'));
+          return {...p, images: cleanImgs};
+        });
+      }
       await docRef(key).set({
-        value: safeClone(LS.get(key)),
+        value: value,
         updatedAt: new Date().toISOString()
       });
       window.__syncReady = true;
@@ -1868,7 +2022,14 @@ function rerenderSyncedKey(key){
     }
   };
 
-  window.saveProductsLS = function(){ LS.set('products', PRODUCTS); };
+  window.saveProductsLS = function(){
+    // Save full products (with images) to localStorage
+    LS.set('products', PRODUCTS);
+    // Also save images separately keyed by product id (survives Firestore round-trips)
+    const imgMap = {};
+    PRODUCTS.forEach(p => { if(p.images && p.images.length) imgMap[p.id] = p.images; });
+    try{ localStorage.setItem('aura_product_images', JSON.stringify(imgMap)); }catch(e){}
+  };
   window.saveOrdersLS = function(){ LS.set('orders', ORDERS); };
   window.saveCustomersLS = function(){ LS.set('customers', CUSTOMERS); };
   window.saveTaxonomyLS = function(){ LS.set('taxonomy', TAXONOMY); };
@@ -1920,7 +2081,17 @@ function rerenderSyncedKey(key){
           const remote = doc.data() ? doc.data().value : null;
           const local = LS.get(key);
           if(JSON.stringify(remote) !== JSON.stringify(local)){
-            baseSet(key, remote);
+            // For products: re-attach local images before saving (Firestore strips them)
+            if(key === 'products' && Array.isArray(remote)){
+              const imgMap = safeGetLocalImages();
+              const merged = remote.map(p => ({
+                ...p,
+                images: (p.images && p.images.length) ? p.images : (imgMap[p.id] || [])
+              }));
+              baseSet(key, merged);
+            } else {
+              baseSet(key, remote);
+            }
             rerenderSyncedKey(key);
           }
           window.__syncReady = true;
@@ -1929,7 +2100,7 @@ function rerenderSyncedKey(key){
 
       rerenderSyncedKey('store');
       rerenderSyncedKey('taxonomy');
-      rerenderSyncedKey('products');
+      rerenderSyncedKey('products'); // will merge local images automatically
       rerenderSyncedKey('orders');
       rerenderSyncedKey('customers');
       rerenderSyncedKey('heatmap');
