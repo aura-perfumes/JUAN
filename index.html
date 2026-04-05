@@ -3860,6 +3860,31 @@
 /* ══════════════════════════════════════════
    CENTRAL DE SUGERENCIAS — Estilos
 ══════════════════════════════════════════ */
+.sug-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(201,168,76,.22);
+  color: rgba(255,255,255,.65);
+  font-family: 'Montserrat', sans-serif;
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: .6rem 1.1rem;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: background var(--trans), color var(--trans), border-color var(--trans), transform var(--trans);
+  margin-bottom: 1.5rem;
+  min-height: 44px;
+}
+.sug-back-btn:hover {
+  background: rgba(201,168,76,.12);
+  color: var(--gold);
+  border-color: rgba(201,168,76,.45);
+  transform: translateX(-2px);
+}
 #sec-sugerencias {
   padding-bottom: 3rem;
 }
@@ -4747,6 +4772,10 @@
 
   <!-- ══ CENTRAL DE SUGERENCIAS ════════════════ -->
   <div id="sec-sugerencias" style="display:none;padding:1.5rem 2rem 3rem;max-width:1200px;margin:0 auto;width:100%;box-sizing:border-box">
+    <!-- Botón volver -->
+    <button class="sug-back-btn" onclick="SugCenter.closeTab()">
+      ← Volver a la colección
+    </button>
     <!-- Hero de búsqueda -->
     <div class="sug-hero">
       <span class="sug-hero-icon">🔮</span>
@@ -5506,72 +5535,82 @@
 ══════════════════════════════════════════════════════════════════════════ */
 const SugCenter = (() => {
 
-  // ── Nueva tabla de sugerencias (por nombre real de perfume) ────────────
-  // Cada entrada: tienes = nombre del perfume que el cliente ya posee
-  //               sugerencias = nombres de perfumes recomendados del catálogo
-  const tablaSugerencias = [
-    { tienes: 'Erba Pura 35ml',                  sugerencias: ['amber oud'] },
-    { tienes: '9pm 35ml',                         sugerencias: ['9am Dive 35ml', '9am 35ml'] },
-    { tienes: 'Hawas Ice 35ml',                   sugerencias: ['Odyssey Aqua 35ml', 'Odyssey Limoni 35ml'] },
-    { tienes: 'Fakhar Black 35ml',                sugerencias: ['Club de Nuit Sillage 35ml'] },
-    { tienes: 'Khamrah Qahwa 35ml',               sugerencias: ['Asad Bourbon 35ml', 'Raghba 35ml'] },
-    { tienes: 'Yara 35ml',                        sugerencias: ['Noble Blush 35ml', 'Odyssey Candee 35ml'] },
-    { tienes: 'Yara Moi 35ml',                    sugerencias: ['Fakhar Rose 35ml', 'Club de Nuit Woman 35ml'] },
-    { tienes: 'Asad 35ml',                        sugerencias: ["Bade'e al Oud for Glory 35ml", 'Hawas Fire 35ml'] },
-    { tienes: 'Yum Yum 35ml',                     sugerencias: ["Bade'e al Oud 35ml", 'Berry on Top 35ml'] },
-    { tienes: 'Xerjoff Soprano 35ml',             sugerencias: ['Xerjoff Opera', "Bade'e al Oud Amethyst 35ml"] },
-    { tienes: "Bade'e al Oud Honor & Glory 35ml", sugerencias: ['Club de Nuit Milestone 35ml', 'Whipped Pleasure 35ml'] },
-    { tienes: 'Asad Zanzibar 35ml',               sugerencias: ['Qaed al Fursan Unlimited 35ml'] },
-    { tienes: 'Khamrah 250ml',                    sugerencias: ['Khamrah Qahwa 250ml', 'Raghba 250ml'] },
+  // ── Grupos de sugerencias (bidireccional) ───────────────────────────────
+  // Cada array es una familia de perfumes relacionados.
+  // Cualquier elemento puede ser el punto de entrada; se sugieren los demás.
+  const gruposSugerencias = [
+    ['Erba Pura 35ml', 'amber oud'],
+    ['9pm 35ml', '9am Dive 35ml', '9am 35ml'],
+    ['Hawas Ice 35ml', 'Odyssey Aqua 35ml', 'Odyssey Limoni 35ml'],
+    ['Fakhar Black 35ml', 'Club de Nuit Sillage 35ml'],
+    ['Khamrah Qahwa 35ml', 'Asad Bourbon 35ml', 'Raghba 35ml'],
+    ['Yara 35ml', 'Noble Blush 35ml', 'Odyssey Candee 35ml'],
+    ['Yara Moi 35ml', 'Fakhar Rose 35ml', 'Club de Nuit Woman 35ml'],
+    ["Asad 35ml", "Bade'e al Oud for Glory 35ml", 'Hawas Fire 35ml'],
+    ["Yum Yum 35ml", "Bade'e al Oud 35ml", 'Berry on Top 35ml'],
+    ['Xerjoff Soprano 35ml', 'Xerjoff Opera', "Bade'e al Oud Amethyst 35ml"],
+    ["Bade'e al Oud Honor & Glory 35ml", 'Club de Nuit Milestone 35ml', 'Whipped Pleasure 35ml'],
+    ['Asad Zanzibar 35ml', 'Qaed al Fursan Unlimited 35ml'],
+    ['Khamrah 250ml', 'Khamrah Qahwa 250ml', 'Raghba 250ml'],
+    ['Club de Nuit Intense Man 250ml', 'Fakhar Black 250ml'],
+    ['Yara Moi 250ml', 'Fakhar Rose 250ml'],
+    ['Yara 250ml', 'Yara Candy 250ml'],
+    ['Khamrah 100ml', 'Khamrah Qahwa 100ml', 'Liquid Brun 100ml'],
+    ['Liquid Brun 100ml', 'Asad Bourbon 100ml'],
+    ['Yara 100ml', 'Odyssey Candee 100ml'],
   ];
 
-  // Índice Fuse para buscar el perfume que el cliente YA TIENE
-  // (busca contra los nombres de 'tienes' en tablaSugerencias)
-  let _fuseTienes = null;
+  // Corpus plano: cada entrada tiene el nombre del perfume + índice de su grupo
+  // Esto permite búsqueda fuzzy sobre TODOS los nombres, no solo la primera columna.
+  let _fuseTodos = null;
 
-  // Índice Fuse secundario para buscar sugerencias en el CATÁLOGO AURA
-  // (busca contra el nombre de cada producto cargado)
+  // Índice Fuse para resolver nombres sugeridos contra el catálogo AURA
   let _fuseCatalog = null;
 
   function _buildFuse() {
-    // Corpus 1 — entradas de la tabla (lo que el cliente dice que tiene)
-    _fuseTienes = new Fuse(tablaSugerencias, {
-      keys: [{ name: 'tienes', weight: 1 }],
+    // Corpus 1 — todos los nombres de todos los grupos (bidireccional)
+    const corpus = [];
+    gruposSugerencias.forEach((grupo, gi) => {
+      grupo.forEach(nombre => {
+        corpus.push({ nombre, grupoIdx: gi });
+      });
+    });
+    _fuseTodos = new Fuse(corpus, {
+      keys: [{ name: 'nombre', weight: 1 }],
       threshold: 0.42,
-      distance: 140,
+      distance: 150,
       minMatchCharLength: 2,
       includeScore: true,
     });
 
-    // Corpus 2 — productos del catálogo AURA (para resolver nombres sugeridos)
+    // Corpus 2 — productos del catálogo AURA (para resolver a objetos reales)
     _fuseCatalog = new Fuse(PRODUCTS, {
       keys: [
         { name: 'name', weight: 0.85 },
         { name: 'desc', weight: 0.15 },
       ],
       threshold: 0.50,
-      distance: 140,
+      distance: 150,
       minMatchCharLength: 2,
       includeScore: true,
     });
   }
 
-  // Resuelve un nombre de sugerencia al producto del catálogo más cercano
+  // Resuelve un nombre de la tabla al producto del catálogo más cercano
   function _resolveProductByName(nombre) {
     if (!_fuseCatalog) return null;
     const hits = _fuseCatalog.search(nombre);
     return hits.length ? hits[0].item : null;
   }
 
-  // Obtiene las sugerencias dado el registro de la tabla que coincidió
-  function _getRecommendations(entry) {
-    const resolved = entry.sugerencias
-      .map(s => _resolveProductByName(s))
+  // Dado el hit de búsqueda, devuelve todos los otros miembros del grupo
+  // (excluyendo el que el cliente ya tiene) resueltos como productos del catálogo
+  function _getRecommendations(matchedNombre, grupoIdx) {
+    const grupo = gruposSugerencias[grupoIdx];
+    const otrosNombres = grupo.filter(n => n !== matchedNombre);
+    return otrosNombres
+      .map(n => _resolveProductByName(n))
       .filter(p => p && (p.stock == null || p.stock > 0));
-
-    // Si no se resuelve nada en el catálogo, devolvemos vacío
-    // (mejor que mostrar resultados erróneos)
-    return resolved;
   }
 
   // ── Renderiza las cards de sugerencias ──────────────────────────────────
@@ -5650,27 +5689,27 @@ const SugCenter = (() => {
     // Reconstruye los índices Fuse cada vez (incorpora productos agregados dinámicamente)
     _buildFuse();
 
-    // 1. Busca en la tabla "¿qué tenés?" con tolerancia fuzzy
-    const hits = _fuseTienes.search(query);
+    // 1. Busca en TODOS los nombres de todos los grupos (bidireccional) con tolerancia fuzzy
+    const hits = _fuseTodos.search(query);
 
     if (!hits.length) {
       document.getElementById('sug-results').innerHTML = `
         <div class="sug-empty">
           <span class="sug-empty-ico">🔍</span>
           <p class="sug-empty-txt">No encontramos <em style="color:var(--gold)">"${escapeHtml(query)}"</em><br>en nuestra base de sugerencias.</p>
-          <p class="sug-empty-hint">Intentá con otro nombre o revisá la ortografía. Ej: "Erba Pura", "9pm", "Yara"…</p>
+          <p class="sug-empty-hint">Intentá con otro nombre. Ej: "Erba Pura", "9pm", "Yara Moi", "Khamrah"…</p>
         </div>`;
       return;
     }
 
-    // 2. Obtiene la entrada ganadora de tablaSugerencias
-    const entry = hits[0].item;
+    // 2. Obtenemos el nombre canónico que coincidió y el índice de su grupo
+    const { nombre: matchedNombre, grupoIdx } = hits[0].item;
 
-    // 3. Resuelve los nombres de perfumes sugeridos contra el catálogo AURA
-    const suggestions = _getRecommendations(entry);
+    // 3. Todos los otros miembros del grupo como sugerencias del catálogo
+    const suggestions = _getRecommendations(matchedNombre, grupoIdx);
 
-    // 4. Renderiza (pasando el nombre canónico de lo que el cliente tiene)
-    _renderResults(entry.tienes, suggestions);
+    // 4. Renderiza
+    _renderResults(matchedNombre, suggestions);
   }
 
   // ── Abre la pestaña de sugerencias (oculta la tienda normal) ───────────
