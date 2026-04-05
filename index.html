@@ -202,13 +202,17 @@
       position: relative;
       overflow: hidden;
       min-height: 100vh;
+      min-height: 100dvh;
     }
 
-    /* Portal background image support */
+    /* Portal background image support — anti-flicker for iOS/Android */
     #s-portal {
       background-size: cover;
       background-position: center;
-      transition: background .4s
+      background-repeat: no-repeat;
+      will-change: transform;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
 
     /* Ambient light orbs for portal (when no bg image) */
@@ -3815,6 +3819,10 @@
         gap: 0;
         justify-content: center;
         background: radial-gradient(ellipse 120% 80% at 50% 30%, #1a2060 0%, #080C22 55%, #04071A 100%);
+        min-height: 100dvh;
+        /* Anti-flicker mobile: forzamos compositing layer propia */
+        transform: translateZ(0);
+        -webkit-transform: translateZ(0);
       }
 
       .portal-brand {
@@ -4150,6 +4158,35 @@
   gap: .35rem;
 }
 .sug-card-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+/* Sug cards: mobile — precio y botón bien alineados y tamaño apropiado */
+@media (max-width: 600px) {
+  .sug-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: .5rem;
+    margin-top: .6rem;
+    padding-top: .6rem;
+  }
+  .sug-card-price {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .sug-card-btn {
+    height: 44px;
+    font-size: .75rem;
+    padding: 0 12px;
+    max-width: 55%;
+    flex-shrink: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    justify-content: center;
+  }
+}
 .sug-empty {
   text-align: center;
   padding: 2.5rem 1rem;
@@ -5268,10 +5305,12 @@
           portalScreen.style.backgroundImage = `radial-gradient(ellipse 100% 100% at 50% 50%,rgba(8,12,34,.55) 0%,rgba(8,12,34,.80) 60%,rgba(4,7,26,.97) 100%),url('${STORE.portalImg}')`;
           portalScreen.style.backgroundSize = 'cover';
           portalScreen.style.backgroundPosition = 'center';
+          portalScreen.style.backgroundRepeat = 'no-repeat';
         } else {
           portalScreen.style.backgroundImage = '';
           portalScreen.style.backgroundSize = '';
           portalScreen.style.backgroundPosition = '';
+          portalScreen.style.backgroundRepeat = '';
         }
       }
       if (portal) { portal.classList.remove('has-image'); portal.innerHTML = '<span class="portal-bottle-fallback" style="display:none"></span>'; }
