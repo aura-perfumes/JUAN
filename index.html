@@ -3637,36 +3637,65 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: .22rem;
+        gap: .18rem;
         background: none;
         border: none;
         cursor: pointer;
-        color: rgba(255, 255, 255, .4);
-        font-size: .55rem;
-        font-weight: 600;
-        letter-spacing: .08em;
+        color: rgba(255, 255, 255, .38);
+        font-size: .52rem;
+        font-weight: 700;
+        letter-spacing: .09em;
         text-transform: uppercase;
-        transition: color var(--trans);
-        padding: .2rem .5rem;
+        transition: color .2s ease, transform .2s ease;
+        padding: .25rem .6rem;
+        position: relative;
       }
 
       .mob-nav-btn.active {
-        color: var(--gold)
+        color: var(--gold);
       }
 
-      .mob-nav-btn.active .mob-nav-icon {
-        transform: scale(1.12);
-        transition: transform .2s
+      /* Dot indicator below active button */
+      .mob-nav-btn.active::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: var(--gold);
+        animation: navDotFade .25s ease both;
+      }
+      @keyframes navDotFade {
+        from { opacity: 0; transform: translateX(-50%) scale(0); }
+        to   { opacity: 1; transform: translateX(-50%) scale(1); }
+      }
+
+      .mob-nav-btn:active {
+        transform: scale(1.15);
+        color: var(--gold);
       }
 
       .mob-nav-btn:hover {
-        color: rgba(201, 168, 76, .7)
+        color: rgba(201, 168, 76, .6);
       }
 
       .mob-nav-icon {
-        font-size: 1.15rem;
-        transition: transform .2s;
-        display: block
+        width: 22px;
+        height: 22px;
+        display: block;
+        transition: transform .2s ease, color .2s ease;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.75;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .mob-nav-btn.active .mob-nav-icon {
+        transform: scale(1.15);
       }
 
       /* Spacing so products don't hide under bottom nav */
@@ -4089,12 +4118,6 @@
   font-weight: 400;
   color: #fff;
   line-height: 1.2;
-}
-.sug-card-desc {
-  font-size: .72rem;
-  color: rgba(255,255,255,.45);
-  line-height: 1.55;
-  flex: 1;
 }
 .sug-card-footer {
   display: flex;
@@ -4740,19 +4763,44 @@
     </div>
     <!-- Mobile Bottom Navigation -->
     <nav class="mobile-bottom-nav" id="mobile-bottom-nav">
+      <!-- INICIO -->
       <button class="mob-nav-btn active" id="mob-nav-home"
-        onclick="document.getElementById('s-store').scrollTo({top:0,behavior:'smooth'});App.setMobNav(this)">
-        <span class="mob-nav-icon">🏠</span>Inicio
+        onclick="MobNav.goHome(this)">
+        <svg class="mob-nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z"/>
+          <path d="M9 21V12h6v9"/>
+        </svg>
+        Inicio
       </button>
+      <!-- COLECCIÓN -->
       <button class="mob-nav-btn" id="mob-nav-col"
-        onclick="document.getElementById('s-store').scrollTo({top:document.getElementById('product-grid').offsetTop-80,behavior:'smooth'});App.setMobNav(this)">
-        <span class="mob-nav-icon">✨</span>Colección
+        onclick="MobNav.goColeccion(this)">
+        <svg class="mob-nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="3" y="3" width="7" height="7" rx="1"/>
+          <rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="3" y="14" width="7" height="7" rx="1"/>
+          <rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
+        Colección
       </button>
-      <button class="mob-nav-btn" id="mob-nav-sug" onclick="SugCenter.openTab();App.setMobNav(this)">
-        <span class="mob-nav-icon">🔮</span>Para vos
+      <!-- PARA VOS -->
+      <button class="mob-nav-btn" id="mob-nav-sug"
+        onclick="MobNav.goSugerencias(this)">
+        <svg class="mob-nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M15 4V2m0 20v-2M4 15H2m20 0h-2M5.6 5.6 4.2 4.2m14.2 14.2-1.4-1.4M5.6 18.4 4.2 19.8M18.4 5.6l-1.4 1.4"/>
+          <circle cx="12" cy="12" r="4"/>
+        </svg>
+        Para vos
       </button>
-      <button class="mob-nav-btn" onclick="Cart.open()">
-        <span class="mob-nav-icon">🛍</span>Carrito
+      <!-- CARRITO -->
+      <button class="mob-nav-btn" id="mob-nav-cart"
+        onclick="MobNav.goCarrito(this)">
+        <svg class="mob-nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <path d="M16 10a4 4 0 01-8 0"/>
+        </svg>
+        Carrito
       </button>
     </nav>
     <!-- Body -->
@@ -5525,6 +5573,89 @@
     })();
   </script>
 
+<!-- ══ MOBNAV — Navegación inferior mobile ══════════════════════════════ -->
+<script>
+/* ══════════════════════════════════════════════════════════════════════════
+   MobNav — Controla la barra de navegación inferior mobile.
+   • Centraliza las acciones de cada botón.
+   • Usa IntersectionObserver para marcar el botón activo según scroll.
+   Modular: no toca código existente.
+══════════════════════════════════════════════════════════════════════════ */
+const MobNav = (() => {
+
+  function _setActive(id) {
+    document.querySelectorAll('.mob-nav-btn').forEach(b => b.classList.remove('active'));
+    const btn = document.getElementById(id);
+    if (btn) btn.classList.add('active');
+  }
+
+  function goHome(btn) {
+    // Si estamos en la vista de sugerencias, volvemos a la tienda primero
+    SugCenter.closeTab();
+    const screen = document.getElementById('s-store');
+    if (screen) screen.scrollTo({ top: 0, behavior: 'smooth' });
+    _setActive('mob-nav-home');
+  }
+
+  function goColeccion(btn) {
+    SugCenter.closeTab();
+    const grid = document.getElementById('product-grid');
+    const screen = document.getElementById('s-store');
+    if (grid && screen) screen.scrollTo({ top: grid.offsetTop - 80, behavior: 'smooth' });
+    _setActive('mob-nav-col');
+  }
+
+  function goSugerencias(btn) {
+    SugCenter.openTab();
+    _setActive('mob-nav-sug');
+  }
+
+  function goCarrito(btn) {
+    Cart.open();
+    // No cambiamos active: el carrito es un overlay, no una sección
+  }
+
+  // ── IntersectionObserver: activa el botón correcto al hacer scroll ──────
+  function _initObserver() {
+    const screen = document.getElementById('s-store');
+    if (!screen || !('IntersectionObserver' in window)) return;
+
+    // Observamos el hero y el product-grid dentro del scroll container (#s-store)
+    // Usamos un trick: root = #s-store, threshold = 0.15
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        const id = entry.target.id;
+        if (id === 'store-hero')    _setActive('mob-nav-home');
+        if (id === 'product-grid')  _setActive('mob-nav-col');
+      });
+    }, {
+      root: screen,
+      rootMargin: '0px 0px -40% 0px',
+      threshold: 0.10,
+    });
+
+    // Observar tras un breve delay para que el DOM esté listo
+    setTimeout(() => {
+      const hero = document.getElementById('store-hero');
+      const grid = document.getElementById('product-grid');
+      if (hero) observer.observe(hero);
+      if (grid) observer.observe(grid);
+    }, 800);
+  }
+
+  // Arrancar el observer cuando el script carga
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _initObserver);
+  } else {
+    setTimeout(_initObserver, 400);
+  }
+
+  return { goHome, goColeccion, goSugerencias, goCarrito };
+})();
+/* FIN — MobNav */
+</script>
+
 <!-- ══ CENTRAL DE SUGERENCIAS — JavaScript ══════════════════════════════ -->
 <script>
 /* ══════════════════════════════════════════════════════════════════════════
@@ -5646,7 +5777,6 @@ const SugCenter = (() => {
           <div class="sug-card-body">
             <div class="sug-card-cat">${escapeHtml(getCategoryName(p.cat))} · ${escapeHtml(getSubcategoryName(p.cat2))}</div>
             <div class="sug-card-name">${escapeHtml(p.name)}</div>
-            <div class="sug-card-desc">${escapeHtml(p.desc || 'Fragancia destacada de AURA.')}</div>
             <div class="sug-card-footer">
               <span class="sug-card-price">$${p.price.toLocaleString('es-AR')}</span>
               <button class="sug-card-btn" onclick="SugCenter.addToCart('${p.id}')">
