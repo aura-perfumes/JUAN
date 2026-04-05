@@ -1059,16 +1059,21 @@
 
     .chip {
       border: 1px solid var(--border);
-      border-radius: 99px;
-      padding: .4rem .9rem;
-      font-size: .65rem;
+      border-radius: 12px;
+      padding: .55rem 1rem;
+      font-size: .68rem;
       font-weight: 600;
-      letter-spacing: .06em;
+      letter-spacing: .04em;
       text-transform: uppercase;
       cursor: pointer;
       background: #fff;
       color: var(--muted);
       transition: all var(--trans);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .35rem;
+      min-height: 42px;
     }
 
     .chip:hover,
@@ -1076,6 +1081,69 @@
       background: var(--text);
       color: #fff;
       border-color: var(--text)
+    }
+
+    /* ── Nav Sugerencias — destacado desktop ── */
+    #nav-link-sugerencias {
+      position: relative;
+      color: var(--gold) !important;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-shadow: 0 0 12px rgba(201,168,76,.4);
+    }
+    #nav-link-sugerencias::after {
+      content: '';
+      position: absolute;
+      bottom: -3px; left: 10%; right: 10%;
+      height: 2px;
+      background: var(--gold-grad);
+      border-radius: 99px;
+      animation: sugPulseBar 2s ease-in-out infinite;
+    }
+    @keyframes sugPulseBar {
+      0%,100% { opacity: .7; transform: scaleX(.85); }
+      50%      { opacity: 1; transform: scaleX(1); }
+    }
+    .sug-nav-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--gold);
+      color: #1a1200;
+      font-size: .48rem;
+      font-weight: 800;
+      letter-spacing: .06em;
+      padding: .12rem .35rem;
+      border-radius: 99px;
+      vertical-align: middle;
+      margin-left: .25rem;
+      animation: sugBadgePulse 1.8s ease-in-out infinite;
+      line-height: 1.2;
+    }
+    @keyframes sugBadgePulse {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50%      { opacity: .75; transform: scale(.92); }
+    }
+    /* Mob nav sug — destacado mobile */
+    #mob-nav-sug {
+      color: var(--gold) !important;
+      position: relative;
+    }
+    #mob-nav-sug .mob-nav-icon {
+      filter: drop-shadow(0 0 4px rgba(201,168,76,.6));
+    }
+    #mob-nav-sug::before {
+      content: 'NUEVO';
+      position: absolute;
+      top: 2px; right: 6px;
+      font-size: .42rem;
+      font-weight: 800;
+      letter-spacing: .05em;
+      color: #1a1200;
+      background: var(--gold);
+      padding: .1rem .28rem;
+      border-radius: 99px;
+      animation: sugBadgePulse 1.8s ease-in-out infinite;
     }
 
     .search-wrap {
@@ -3684,12 +3752,12 @@
       }
 
       .filter-chips {
-        overflow-x: auto;
-        flex-wrap: nowrap;
-        padding-bottom: .25rem;
-        gap: .4rem;
-        -ms-overflow-style: none;
-        scrollbar-width: none;
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        gap: .55rem;
+        flex-wrap: unset;
+        overflow-x: unset;
+        padding-bottom: .1rem;
       }
 
       .filter-chips::-webkit-scrollbar {
@@ -3697,8 +3765,14 @@
       }
 
       .chip {
-        white-space: nowrap;
-        flex-shrink: 0
+        white-space: normal;
+        flex-shrink: unset;
+        border-radius: 12px;
+        padding: .65rem .6rem;
+        font-size: .67rem;
+        min-height: 48px;
+        text-align: center;
+        justify-content: center;
       }
 
       .search-wrap,
@@ -4608,7 +4682,7 @@
       <div class="store-nav-links">
         <button class="store-nav-link"
           onclick="document.getElementById('s-store').scrollTo({top:document.getElementById('product-grid').offsetTop-80,behavior:'smooth'})">Colección</button>
-        <button class="store-nav-link" id="nav-link-sugerencias" onclick="SugCenter.openTab()">✨ Sugerencias</button>
+        <button class="store-nav-link" id="nav-link-sugerencias" onclick="SugCenter.openTab()">✦ Sugerencias<span class="sug-nav-badge">¡NUEVO!</span></button>
         <button class="store-nav-link" onclick="App.openNosotros()">Nosotros</button>
         <button class="store-nav-link" onclick="App.openNosotros()">Contacto</button>
       </div>
@@ -5432,77 +5506,78 @@
 ══════════════════════════════════════════════════════════════════════════ */
 const SugCenter = (() => {
 
-  // ── Tabla de recomendaciones explícita ──────────────────────────────────
-  // Dado el id del perfume que el cliente ya tiene, qué sugerir (por id).
-  // Podés expandir esta tabla agregando más ids de productos.
-  const RECO_TABLE = {
-    'odyssey-tyrant':  ['absolu-noir', 'cedar-smoke', 'musc-blanc'],
-    'odyssey-spectra': ['cedar-smoke', 'rose-velours', 'absolu-noir'],
-    'odyssey-limoni':  ['musc-blanc', 'odyssey-spectra', 'rose-velours'],
-    'odyssey-candeo':  ['rose-velours', 'absolu-noir', 'musc-blanc'],
-    'absolu-noir':     ['cedar-smoke', 'odyssey-tyrant', 'odyssey-candeo'],
-    'rose-velours':    ['odyssey-candeo', 'musc-blanc', 'odyssey-spectra'],
-    'musc-blanc':      ['odyssey-limoni', 'rose-velours', 'odyssey-spectra'],
-    'cedar-smoke':     ['absolu-noir', 'odyssey-tyrant', 'odyssey-spectra'],
-  };
+  // ── Nueva tabla de sugerencias (por nombre real de perfume) ────────────
+  // Cada entrada: tienes = nombre del perfume que el cliente ya posee
+  //               sugerencias = nombres de perfumes recomendados del catálogo
+  const tablaSugerencias = [
+    { tienes: 'Erba Pura 35ml',                  sugerencias: ['amber oud'] },
+    { tienes: '9pm 35ml',                         sugerencias: ['9am Dive 35ml', '9am 35ml'] },
+    { tienes: 'Hawas Ice 35ml',                   sugerencias: ['Odyssey Aqua 35ml', 'Odyssey Limoni 35ml'] },
+    { tienes: 'Fakhar Black 35ml',                sugerencias: ['Club de Nuit Sillage 35ml'] },
+    { tienes: 'Khamrah Qahwa 35ml',               sugerencias: ['Asad Bourbon 35ml', 'Raghba 35ml'] },
+    { tienes: 'Yara 35ml',                        sugerencias: ['Noble Blush 35ml', 'Odyssey Candee 35ml'] },
+    { tienes: 'Yara Moi 35ml',                    sugerencias: ['Fakhar Rose 35ml', 'Club de Nuit Woman 35ml'] },
+    { tienes: 'Asad 35ml',                        sugerencias: ["Bade'e al Oud for Glory 35ml", 'Hawas Fire 35ml'] },
+    { tienes: 'Yum Yum 35ml',                     sugerencias: ["Bade'e al Oud 35ml", 'Berry on Top 35ml'] },
+    { tienes: 'Xerjoff Soprano 35ml',             sugerencias: ['Xerjoff Opera', "Bade'e al Oud Amethyst 35ml"] },
+    { tienes: "Bade'e al Oud Honor & Glory 35ml", sugerencias: ['Club de Nuit Milestone 35ml', 'Whipped Pleasure 35ml'] },
+    { tienes: 'Asad Zanzibar 35ml',               sugerencias: ['Qaed al Fursan Unlimited 35ml'] },
+    { tienes: 'Khamrah 250ml',                    sugerencias: ['Khamrah Qahwa 250ml', 'Raghba 250ml'] },
+  ];
 
-  // ── Afinidad entre categorías ───────────────────────────────────────────
-  const CAT_AFFINITY = {
-    floral:   ['floral', 'almizcle', 'oriental'],
-    madera:   ['madera', 'oriental', 'almizcle'],
-    oriental: ['oriental', 'madera', 'almizcle'],
-    almizcle: ['almizcle', 'floral', 'fresco'],
-    fresco:   ['fresco', 'almizcle', 'madera'],
-  };
+  // Índice Fuse para buscar el perfume que el cliente YA TIENE
+  // (busca contra los nombres de 'tienes' en tablaSugerencias)
+  let _fuseTienes = null;
 
-  let _fuse = null;
+  // Índice Fuse secundario para buscar sugerencias en el CATÁLOGO AURA
+  // (busca contra el nombre de cada producto cargado)
+  let _fuseCatalog = null;
 
-  // ── Construye el índice Fuse con los productos actuales ─────────────────
   function _buildFuse() {
-    const corpus = PRODUCTS.map(p => ({
-      id:   p.id,
-      name: p.name,
-      desc: p.desc || '',
-      cat:  getCategoryName(p.cat),
-      cat2: getSubcategoryName(p.cat2),
-    }));
-    _fuse = new Fuse(corpus, {
+    // Corpus 1 — entradas de la tabla (lo que el cliente dice que tiene)
+    _fuseTienes = new Fuse(tablaSugerencias, {
+      keys: [{ name: 'tienes', weight: 1 }],
+      threshold: 0.42,
+      distance: 140,
+      minMatchCharLength: 2,
+      includeScore: true,
+    });
+
+    // Corpus 2 — productos del catálogo AURA (para resolver nombres sugeridos)
+    _fuseCatalog = new Fuse(PRODUCTS, {
       keys: [
-        { name: 'name', weight: 0.75 },
-        { name: 'cat',  weight: 0.15 },
-        { name: 'cat2', weight: 0.10 },
+        { name: 'name', weight: 0.85 },
+        { name: 'desc', weight: 0.15 },
       ],
-      threshold: 0.45,        // 0 = exacto, 1 = todo coincide
-      distance: 120,
+      threshold: 0.50,
+      distance: 140,
       minMatchCharLength: 2,
       includeScore: true,
     });
   }
 
-  // ── Obtiene sugerencias para un producto encontrado ─────────────────────
-  function _getRecommendations(matchedProduct) {
-    let ids = [];
+  // Resuelve un nombre de sugerencia al producto del catálogo más cercano
+  function _resolveProductByName(nombre) {
+    if (!_fuseCatalog) return null;
+    const hits = _fuseCatalog.search(nombre);
+    return hits.length ? hits[0].item : null;
+  }
 
-    if (RECO_TABLE[matchedProduct.id]) {
-      ids = RECO_TABLE[matchedProduct.id];
-    } else {
-      // Fallback: afinidad por categoría
-      const affineCats = CAT_AFFINITY[matchedProduct.cat] || [matchedProduct.cat];
-      ids = PRODUCTS
-        .filter(p => p.id !== matchedProduct.id && affineCats.includes(p.cat))
-        .sort((a, b) => (b.stock || 0) - (a.stock || 0))
-        .slice(0, 4)
-        .map(p => p.id);
-    }
-
-    // Reconstruye la lista de objetos, filtrando no encontrados y agotados
-    return ids
-      .map(id => PRODUCTS.find(p => p.id === id))
+  // Obtiene las sugerencias dado el registro de la tabla que coincidió
+  function _getRecommendations(entry) {
+    const resolved = entry.sugerencias
+      .map(s => _resolveProductByName(s))
       .filter(p => p && (p.stock == null || p.stock > 0));
+
+    // Si no se resuelve nada en el catálogo, devolvemos vacío
+    // (mejor que mostrar resultados erróneos)
+    return resolved;
   }
 
   // ── Renderiza las cards de sugerencias ──────────────────────────────────
-  function _renderResults(matchedProduct, suggestions) {
+  // matchedName: nombre canónico del perfume que el cliente ya tiene (string)
+  // suggestions: array de objetos producto del catálogo AURA
+  function _renderResults(matchedName, suggestions) {
     const box = document.getElementById('sug-results');
     if (!box) return;
 
@@ -5548,8 +5623,8 @@ const SugCenter = (() => {
         <div class="sug-match-banner">
           <span class="sug-match-ico">✅</span>
           <div>
-            Encontramos <span class="sug-match-name">${escapeHtml(matchedProduct.name)}</span>
-            en nuestro catálogo. Te recomendamos estas fragancias que te van a encantar:
+            Tenés <span class="sug-match-name">${escapeHtml(matchedName)}</span> —
+            te recomendamos estas fragancias que te van a encantar:
           </div>
         </div>
         <div class="sug-section-label">Perfumes recomendados para vos</div>
@@ -5572,25 +5647,30 @@ const SugCenter = (() => {
       return;
     }
 
+    // Reconstruye los índices Fuse cada vez (incorpora productos agregados dinámicamente)
     _buildFuse();
-    const results = _fuse.search(query);
 
-    if (!results.length) {
+    // 1. Busca en la tabla "¿qué tenés?" con tolerancia fuzzy
+    const hits = _fuseTienes.search(query);
+
+    if (!hits.length) {
       document.getElementById('sug-results').innerHTML = `
         <div class="sug-empty">
           <span class="sug-empty-ico">🔍</span>
-          <p class="sug-empty-txt">No encontramos <em style="color:var(--gold)">"${escapeHtml(query)}"</em><br>en nuestro catálogo.</p>
-          <p class="sug-empty-hint">Intentá con otro nombre o revisá la ortografía.</p>
+          <p class="sug-empty-txt">No encontramos <em style="color:var(--gold)">"${escapeHtml(query)}"</em><br>en nuestra base de sugerencias.</p>
+          <p class="sug-empty-hint">Intentá con otro nombre o revisá la ortografía. Ej: "Erba Pura", "9pm", "Yara"…</p>
         </div>`;
       return;
     }
 
-    const bestMatchId  = results[0].item.id;
-    const matchedProduct = PRODUCTS.find(p => p.id === bestMatchId);
-    if (!matchedProduct) return;
+    // 2. Obtiene la entrada ganadora de tablaSugerencias
+    const entry = hits[0].item;
 
-    const suggestions = _getRecommendations(matchedProduct);
-    _renderResults(matchedProduct, suggestions);
+    // 3. Resuelve los nombres de perfumes sugeridos contra el catálogo AURA
+    const suggestions = _getRecommendations(entry);
+
+    // 4. Renderiza (pasando el nombre canónico de lo que el cliente tiene)
+    _renderResults(entry.tienes, suggestions);
   }
 
   // ── Abre la pestaña de sugerencias (oculta la tienda normal) ───────────
