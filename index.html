@@ -308,7 +308,7 @@
 
     .portal-cards {
       display: flex;
-      gap: 1.25rem;
+      gap: 1.5rem;
       flex-wrap: wrap;
       justify-content: center;
       position: relative;
@@ -316,57 +316,91 @@
     }
 
     .portal-card {
-      width: min(200px, 42vw);
-      padding: 1.5rem 1.25rem;
-      border-radius: 14px;
+      width: min(280px, 44vw);
+      padding: 2.5rem 2rem 2rem;
+      border-radius: 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: .4rem;
-      border: 1px solid;
+      gap: 1rem;
       cursor: pointer;
-      transition: transform var(--trans), box-shadow var(--trans);
-      background: transparent;
       text-align: center;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border: 1px solid;
     }
+    .portal-card:hover { transform: translateY(-5px); }
+    .portal-card:active { transform: translateY(-2px); }
 
-    .portal-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 12px 32px rgba(0, 0, 0, .4)
-    }
-
+    /* TEAL — Personal */
     .portal-card.teal {
-      border-color: var(--teal);
-      color: var(--teal)
+      background: linear-gradient(145deg, rgba(45,122,107,0.25) 0%, rgba(20,60,50,0.35) 100%);
+      border-color: rgba(45,200,150,0.35);
+      box-shadow: 0 0 40px rgba(45,180,120,0.2), inset 0 1px 0 rgba(255,255,255,0.08);
+      color: #2DD4A0;
+    }
+    .portal-card.teal::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 10%; right: 10%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #2DD4A0, transparent);
+      border-radius: 99px;
+      opacity: 0.7;
     }
 
-    .portal-card.teal:hover {
-      background: rgba(45, 122, 107, .08)
-    }
-
+    /* GOLD — Cliente */
     .portal-card.gold {
-      border-color: var(--gold);
-      color: var(--gold)
+      background: linear-gradient(145deg, rgba(201,168,76,0.2) 0%, rgba(80,55,10,0.35) 100%);
+      border-color: rgba(201,168,76,0.4);
+      box-shadow: 0 0 50px rgba(201,168,76,0.25), inset 0 1px 0 rgba(255,255,255,0.06);
+      color: #C9A84C;
+    }
+    .portal-card.gold::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 10%; right: 10%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #C9A84C, transparent);
+      border-radius: 99px;
+      opacity: 0.8;
+    }
+    .portal-card.gold::before {
+      content: '';
+      position: absolute;
+      top: -50%; right: -30%;
+      width: 60%; height: 200%;
+      background: linear-gradient(135deg, transparent 30%, rgba(201,168,76,0.08) 50%, transparent 70%);
+      transform: rotate(25deg);
+      pointer-events: none;
     }
 
-    .portal-card.gold:hover {
-      background: rgba(201, 168, 76, .08)
+    .portal-card-icon {
+      width: 58px; height: 58px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      border: 1.5px solid currentColor;
+      opacity: 0.85;
+      margin-bottom: 0.25rem;
     }
-
+    .portal-card-icon svg {
+      width: 26px; height: 26px;
+      stroke: currentColor; fill: none; stroke-width: 1.8;
+      stroke-linecap: round; stroke-linejoin: round;
+    }
     .portal-card-title {
       font-family: 'Cormorant Garamond', serif;
-      font-size: 1.5rem;
-      font-weight: 400;
-      letter-spacing: .04em
+      font-size: 2rem; font-weight: 400;
+      letter-spacing: 0.04em; color: #fff;
     }
-
     .portal-card-sub {
-      font-size: .62rem;
-      font-weight: 600;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-      opacity: .7
+      font-size: 0.62rem; font-weight: 700;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      opacity: 0.65; color: currentColor;
     }
 
     /* ══════════════════════════════════════════
@@ -1280,10 +1314,15 @@
       transition: color var(--trans);
     }
 
-    .prod-heart:hover,
-    .prod-heart.liked {
-      color: #ef4444
+    .prod-heart:hover {
+      color: #ef4444;
+      transform: scale(1.15);
     }
+    .prod-heart.liked {
+      color: #ef4444;
+      background: #fff5f5;
+    }
+    .prod-heart.liked::after { content: '\2665'; }
 
     .prod-body {
       padding: 1rem
@@ -3870,25 +3909,14 @@
         align-items: center;
         gap: 1rem;
         width: 100%;
-        max-width: 320px
       }
-
       .portal-card {
-        width: 100% !important;
-        padding: 1.5rem 1.75rem;
-        flex-direction: row;
-        justify-content: space-between;
-        gap: 1rem
+        width: min(320px, 92vw) !important;
+        padding: 2rem 1.75rem;
+        flex-direction: column;
       }
-
-      .portal-card-title {
-        font-size: 1.75rem
-      }
-
-      .portal-card-sub {
-        font-size: .6rem;
-        letter-spacing: .1em
-      }
+      .portal-card-title { font-size: 1.75rem; }
+      .portal-card-sub { font-size: .6rem; letter-spacing: .1em; }
 
       /* ── HERO CONFIG SECTION — nuevo campo logo ── */
       .hero-logo-preview {
@@ -4267,11 +4295,26 @@
       <div class="portal-brand-tagline">Maison de Parfum · Est. 2009</div>
     </div>
     <div class="portal-cards">
+      <!-- Personal -->
       <button class="portal-card teal anim d2" onclick="App.goStaff()">
+        <div class="portal-card-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="8" r="4"/>
+            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+          </svg>
+        </div>
         <div class="portal-card-title">Personal</div>
         <div class="portal-card-sub">Gestión interna →</div>
       </button>
+      <!-- Cliente -->
       <button class="portal-card gold anim d3" onclick="App.goStore()">
+        <div class="portal-card-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <path d="M16 10a4 4 0 01-8 0"/>
+          </svg>
+        </div>
         <div class="portal-card-title">Cliente</div>
         <div class="portal-card-sub">Explorar tienda →</div>
       </button>
@@ -4797,7 +4840,10 @@
         <button class="store-nav-link" onclick="App.openNosotros()">Contacto</button>
       </div>
       <div class="store-nav-right">
-        <button class="store-nav-icon" title="Favoritos">♡</button>
+        <button class="store-nav-icon" id="fav-nav-btn" title="Favoritos" onclick="Favorites.openPanel()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+          <span id="fav-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--gold);color:#1a1200;font-size:.45rem;font-weight:800;border-radius:99px;padding:.15rem .35rem;min-width:1.1em;text-align:center;line-height:1.4"></span>
+        </button>
         <button class="store-cart-btn" onclick="Cart.open()" title="Carrito">
           🛍
           <span id="store-badge"></span>
@@ -5210,7 +5256,8 @@
         const thumbContent = hasImg
           ? `<div class="prod-thumb-skeleton" id="sk-${p.id}"></div><img src="${p.images[0]}" alt="${escapeHtml(p.name)}" loading="${eager ? 'eager' : 'lazy'}"${eager ? ' fetchpriority="high"' : ''} decoding="async" onload="const sk=document.getElementById('sk-${p.id}');if(sk)sk.classList.add('loaded')"/>`
           : `<div class="prod-thumb-svg">${PERFUME_SVG}</div>`;
-        return `<div class="prod-card" onclick="App.openProductDetail('${p.id}')" data-click-zone="productCard"><div class="prod-thumb">${thumbContent}${p.badge ? `<span class="prod-badge">${escapeHtml(p.badge)}</span>` : ''}<button class="prod-heart" onclick="event.stopPropagation();this.classList.toggle('liked')" title="Favorito">♡</button></div><div class="prod-body"><div class="prod-cat">${escapeHtml(getCategoryName(p.cat))} / ${escapeHtml(getSubcategoryName(p.cat2))}</div><div class="prod-name">${escapeHtml(p.name)}</div><div class="prod-size">${escapeHtml(p.size || '35 ml · EDP')}</div>${thumbs}<div class="prod-footer"><span class="prod-price">$${p.price.toLocaleString('es-AR')}</span><button class="prod-atc" onclick="event.stopPropagation();Cart.addItem(PRODUCTS.find(x=>x.id==='${p.id}'))">+ Añadir</button></div></div></div>`;
+        const isFav = typeof Favorites !== 'undefined' && Favorites.has(p.id);
+        return `<div class="prod-card" onclick="App.openProductDetail('${p.id}')" data-click-zone="productCard"><div class="prod-thumb">${thumbContent}${p.badge ? `<span class="prod-badge">${escapeHtml(p.badge)}</span>` : ''}<button class="prod-heart${isFav ? ' liked' : ''}" data-pid="${p.id}" onclick="event.stopPropagation();Favorites.toggle('${p.id}',this)" title="Favorito">♡</button></div><div class="prod-body"><div class="prod-cat">${escapeHtml(getCategoryName(p.cat))} / ${escapeHtml(getSubcategoryName(p.cat2))}</div><div class="prod-name">${escapeHtml(p.name)}</div><div class="prod-size">${escapeHtml(p.size || '35 ml · EDP')}</div>${thumbs}<div class="prod-footer"><span class="prod-price">$${p.price.toLocaleString('es-AR')}</span><button class="prod-atc" onclick="event.stopPropagation();Cart.addItem(PRODUCTS.find(x=>x.id==='${p.id}'))">+ Añadir</button></div></div></div>`;
       }).join('') : '<div class="section-card" style="grid-column:1/-1"><div class="tbl-empty">No hay fragancias para ese filtro.</div></div>'
     }
     function upsertCustomerFromOrder(order) { const key = (order.phone || '').trim() || order.customerName.toLowerCase(); const idx = CUSTOMERS.findIndex(c => ((c.phone || '').trim() || c.name.toLowerCase()) === key); if (idx >= 0) { CUSTOMERS[idx].name = order.customerName; CUSTOMERS[idx].phone = order.phone; CUSTOMERS[idx].orders = (CUSTOMERS[idx].orders || 0) + 1; CUSTOMERS[idx].totalSpent = (CUSTOMERS[idx].totalSpent || 0) + order.total; CUSTOMERS[idx].lastOrder = order.date; CUSTOMERS[idx].segment = (CUSTOMERS[idx].totalSpent || 0) >= 50000 ? 'VIP' : 'Activo' } else { CUSTOMERS.push({ name: order.customerName, phone: order.phone, orders: 1, totalSpent: order.total, lastOrder: order.date, segment: order.total >= 50000 ? 'VIP' : 'Nuevo' }) } saveCustomersLS() }
@@ -5564,7 +5611,6 @@
       window.saveTaxonomyLS = function () { LS.set('taxonomy', TAXONOMY); };
       window.saveHeatmapLS = function () { LS.set('heatmap', HEATMAP); };
       window.saveStoreConfig = function () { LS.set('store', STORE); };
-
       const originalSaveNosotros = Dash.saveNosotros.bind(Dash);
       Dash.saveNosotros = function () {
         const vals = {
@@ -5644,6 +5690,83 @@
       bootstrapSync();
     })();
   </script>
+
+<!-- ══ FAVORITES — Sistema de favoritos con localStorage ══════════════ -->
+<script>
+const Favorites = (() => {
+  const LS_KEY = 'aura_favorites';
+
+  function _load() {
+    try { return new Set(JSON.parse(localStorage.getItem(LS_KEY) || '[]')); }
+    catch { return new Set(); }
+  }
+  function _save(set) {
+    try { localStorage.setItem(LS_KEY, JSON.stringify([...set])); } catch {}
+  }
+
+  function _updateBadge() {
+    const badge = document.getElementById('fav-badge');
+    if (!badge) return;
+    const count = _load().size;
+    badge.textContent = count;
+    badge.style.display = count > 0 ? 'inline-block' : 'none';
+  }
+
+  function toggle(productId, btnEl) {
+    const favs = _load();
+    if (favs.has(productId)) {
+      favs.delete(productId);
+      if (btnEl) btnEl.classList.remove('liked');
+    } else {
+      favs.add(productId);
+      if (btnEl) {
+        btnEl.classList.add('liked');
+        btnEl.style.transform = 'scale(1.45)';
+        setTimeout(() => { btnEl.style.transform = ''; }, 230);
+      }
+    }
+    _save(favs);
+    _updateBadge();
+  }
+
+  function has(productId) {
+    return _load().has(productId);
+  }
+
+  function openPanel() {
+    const favs = _load();
+    if (!favs.size) {
+      alert('Aún no tenés favoritos.\nTocá el ♡ en cualquier perfume para guardarlo.');
+      return;
+    }
+    // Muestra solo favoritos en la grilla temporalmente
+    const grid = document.getElementById('product-grid');
+    const screen = document.getElementById('s-store');
+    if (!grid) return;
+    if (screen) screen.scrollTo({ top: grid.offsetTop - 80, behavior: 'smooth' });
+    const origProducts = PRODUCTS;
+    const favList = PRODUCTS.filter(p => favs.has(p.id));
+    // eslint-disable-next-line no-global-assign
+    PRODUCTS = favList;
+    if (typeof renderProducts === 'function') renderProducts();
+    // eslint-disable-next-line no-global-assign
+    PRODUCTS = origProducts;
+  }
+
+  // Restaurar estados de corazón después de renderizar
+  function restoreHearts() {
+    const favs = _load();
+    document.querySelectorAll('.prod-heart[data-pid]').forEach(btn => {
+      btn.classList.toggle('liked', favs.has(btn.dataset.pid));
+    });
+  }
+
+  // Inicializar badge al cargar la página
+  setTimeout(_updateBadge, 500);
+
+  return { toggle, has, openPanel, restoreHearts };
+})();
+</script>
 
 <!-- ══ MOBNAV — Navegación inferior mobile ══════════════════════════════ -->
 <script>
