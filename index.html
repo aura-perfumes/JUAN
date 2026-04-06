@@ -1251,6 +1251,122 @@
       object-fit: cover
     }
 
+    .prod-carousel {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      touch-action: pan-y;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .prod-carousel-track {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      transition: transform .38s cubic-bezier(.22, 1, .36, 1);
+      will-change: transform;
+    }
+
+    .prod-carousel-slide {
+      min-width: 100%;
+      width: 100%;
+      height: 100%;
+      flex: 0 0 100%;
+      position: relative;
+      background: #f0ede8;
+    }
+
+    .prod-carousel-slide img,
+    .prod-carousel-slide .prod-thumb-svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .prod-carousel-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 34px;
+      height: 34px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(12, 15, 26, .52);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      line-height: 1;
+      z-index: 4;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .22s ease, background .22s ease, transform .22s ease;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .prod-carousel:hover .prod-carousel-nav,
+    .prod-carousel:focus-within .prod-carousel-nav {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .prod-carousel-nav:hover {
+      background: rgba(12, 15, 26, .72);
+      transform: translateY(-50%) scale(1.05);
+    }
+
+    .prod-carousel-nav.prev {
+      left: 10px;
+    }
+
+    .prod-carousel-nav.next {
+      right: 10px;
+    }
+
+    .prod-carousel-dots {
+      position: absolute;
+      left: 50%;
+      bottom: 10px;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      z-index: 4;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(12, 15, 26, .18);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .prod-carousel-dot {
+      width: 7px;
+      height: 7px;
+      border: none;
+      border-radius: 50%;
+      padding: 0;
+      background: rgba(255, 255, 255, .45);
+      transition: transform .22s ease, background .22s ease;
+    }
+
+    .prod-carousel-dot.active {
+      background: #fff;
+      transform: scale(1.18);
+    }
+
+    @media (hover:none), (pointer:coarse) {
+      .prod-carousel-nav {
+        opacity: .96;
+        pointer-events: auto;
+        width: 30px;
+        height: 30px;
+        background: rgba(12, 15, 26, .42);
+      }
+    }
+
     .prod-thumb-emoji {
       font-size: 4rem;
       opacity: .5
@@ -5370,19 +5486,128 @@
     function initChart(period = 'Semanal') { const ctx = document.getElementById('revenue-chart'); if (!ctx) return; let d; if (period === 'Semanal') { const last7 = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']; const totals = [0, 0, 0, 0, 0, 0, 0]; ORDERS.forEach(o => { const day = (new Date(o.date).getDay() + 6) % 7; totals[day] += o.total }); d = { labels: last7, data: totals.some(Boolean) ? totals : [120, 180, 160, 220, 195, 285, 250] } } else if (period === 'Mensual') { d = getRevenueSeries() } else { const yearly = {}; ORDERS.forEach(o => { const y = new Date(o.date).getFullYear(); yearly[y] = (yearly[y] || 0) + o.total }); const years = Object.keys(yearly).sort(); d = { labels: years.length ? years : ['2021', '2022', '2023', '2024', '2025', '2026'], data: years.length ? years.map(y => yearly[y]) : [5000, 6200, 7800, 9100, 11000, 14500] } } if (revenueChart) revenueChart.destroy(); revenueChart = new Chart(ctx, { type: 'line', data: { labels: d.labels, datasets: [{ data: d.data, borderColor: '#10B981', backgroundColor: 'rgba(16,185,129,.08)', tension: .4, pointBackgroundColor: '#10B981', pointRadius: 4, fill: true }] }, options: { plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 11 } } }, y: { grid: { color: 'rgba(0,0,0,.05)' }, ticks: { color: '#94a3b8', font: { size: 11 }, callback: v => '$' + Number(v).toLocaleString('es-AR') } } }, responsive: true, maintainAspectRatio: true } }) }
     function buildHeroTitle(title) { const words = String(title || '').trim().split(/\s+/).filter(Boolean); if (!words.length) return 'AURA'; const last = words.pop(); return `${escapeHtml(words.join(' '))}${words.length ? '<br>' : ''}<em>${escapeHtml(last)}</em>` }
     function renderStoreFilters() { const box = document.getElementById('filter-chips'); if (!box) return; box.innerHTML = `<button class="chip ${currentFilter === 'todos' ? 'active' : ''}" data-cat="todos" onclick="App.filter(this)">Todos</button>` + TAXONOMY.categories.map(c => `<button class="chip ${currentFilter === c.id ? 'active' : ''}" data-cat="${c.id}" onclick="App.filter(this)">${escapeHtml(c.name)}</button>`).join('') }
+    function buildProductCardCarousel(p, idx) {
+      const images = Array.isArray(p.images) && p.images.length ? p.images.filter(Boolean) : [];
+      const eager = idx < 6;
+      const name = escapeHtml(p.name);
+      if (!images.length) return `<div class="prod-thumb-svg">${PERFUME_SVG}</div>`;
+      if (images.length === 1) {
+        return `<div class="prod-thumb-skeleton" id="sk-${p.id}-0"></div><img src="${images[0]}" alt="${name}" loading="${eager ? 'eager' : 'lazy'}"${eager ? ' fetchpriority="high"' : ''} decoding="async" onload="const sk=document.getElementById('sk-${p.id}-0');if(sk)sk.classList.add('loaded')"/>`;
+      }
+      const slides = images.map((src, imageIdx) => `<div class="prod-carousel-slide"><div class="prod-thumb-skeleton" id="sk-${p.id}-${imageIdx}"></div><img src="${src}" alt="${name}" loading="${eager && imageIdx === 0 ? 'eager' : 'lazy'}"${eager && imageIdx === 0 ? ' fetchpriority="high"' : ''} decoding="async" draggable="false" onload="const sk=document.getElementById('sk-${p.id}-${imageIdx}');if(sk)sk.classList.add('loaded')"/></div>`).join('');
+      const dots = images.map((_, imageIdx) => `<button class="prod-carousel-dot ${imageIdx === 0 ? 'active' : ''}" type="button" aria-label="Ver imagen ${imageIdx + 1}" data-index="${imageIdx}"></button>`).join('');
+      return `<div class="prod-carousel" data-carousel data-product-id="${p.id}" data-index="0"><div class="prod-carousel-track">${slides}</div><button class="prod-carousel-nav prev" type="button" aria-label="Imagen anterior">‹</button><button class="prod-carousel-nav next" type="button" aria-label="Imagen siguiente">›</button><div class="prod-carousel-dots">${dots}</div></div>`;
+    }
+
+    function initProductCarousels(scope = document) {
+      const carousels = scope.querySelectorAll('[data-carousel]');
+      carousels.forEach(carousel => {
+        if (carousel.dataset.carouselReady === '1') return;
+        carousel.dataset.carouselReady = '1';
+        const track = carousel.querySelector('.prod-carousel-track');
+        const slides = Array.from(carousel.querySelectorAll('.prod-carousel-slide'));
+        const dots = Array.from(carousel.querySelectorAll('.prod-carousel-dot'));
+        const prev = carousel.querySelector('.prod-carousel-nav.prev');
+        const next = carousel.querySelector('.prod-carousel-nav.next');
+        if (!track || slides.length < 2) return;
+
+        let current = 0;
+        let startX = 0;
+        let currentX = 0;
+        let dragging = false;
+        let moved = false;
+
+        const goTo = (index, animate = true) => {
+          current = (index + slides.length) % slides.length;
+          carousel.dataset.index = String(current);
+          track.style.transition = animate ? 'transform .38s cubic-bezier(.22, 1, .36, 1)' : 'none';
+          track.style.transform = `translateX(-${current * 100}%)`;
+          dots.forEach((dot, dotIdx) => dot.classList.toggle('active', dotIdx === current));
+        };
+
+        const stopCardClickOnce = () => {
+          carousel.dataset.preventClick = '1';
+          setTimeout(() => { carousel.dataset.preventClick = '0'; }, 120);
+        };
+
+        prev.addEventListener('click', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          goTo(current - 1);
+        });
+
+        next.addEventListener('click', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          goTo(current + 1);
+        });
+
+        dots.forEach((dot, dotIdx) => {
+          dot.addEventListener('click', e => {
+            e.preventDefault();
+            e.stopPropagation();
+            goTo(dotIdx);
+          });
+        });
+
+        carousel.addEventListener('click', e => {
+          if (carousel.dataset.preventClick === '1') {
+            e.preventDefault();
+            e.stopPropagation();
+            carousel.dataset.preventClick = '0';
+          }
+        }, true);
+
+        carousel.addEventListener('pointerdown', e => {
+          if (e.pointerType === 'mouse' && e.button !== 0) return;
+          dragging = true;
+          moved = false;
+          startX = e.clientX;
+          currentX = e.clientX;
+          track.style.transition = 'none';
+        });
+
+        carousel.addEventListener('pointermove', e => {
+          if (!dragging) return;
+          currentX = e.clientX;
+          const delta = currentX - startX;
+          if (Math.abs(delta) > 6) moved = true;
+          const base = -current * carousel.clientWidth;
+          track.style.transform = `translateX(${base + delta}px)`;
+        });
+
+        const endDrag = () => {
+          if (!dragging) return;
+          dragging = false;
+          const delta = currentX - startX;
+          if (Math.abs(delta) > 35) {
+            goTo(current + (delta < 0 ? 1 : -1));
+            stopCardClickOnce();
+          } else {
+            goTo(current);
+          }
+        };
+
+        carousel.addEventListener('pointerup', endDrag);
+        carousel.addEventListener('pointercancel', endDrag);
+        carousel.addEventListener('pointerleave', () => {
+          if (dragging) endDrag();
+        });
+        carousel.addEventListener('dragstart', e => e.preventDefault());
+
+        goTo(0, false);
+      });
+    }
+
     function renderProducts() {
       const grid = document.getElementById('product-grid'); if (!grid) return; renderStoreFilters(); let list = PRODUCTS.filter(p => { const q = currentSearch.toLowerCase().trim(); const matchesFilter = currentFilter === 'todos' || p.cat === currentFilter || p.cat2 === currentFilter; const hay = [p.name, p.desc, getCategoryName(p.cat), getSubcategoryName(p.cat2)].join(' ').toLowerCase(); return matchesFilter && (!q || hay.includes(q)) }); const label = document.getElementById('store-products-label');
       if (label) { const cat = currentFilter === 'todos' ? 'Colección completa' : TAXONOMY.categories.find(c => c.id === currentFilter)?.name || 'Colección'; label.textContent = `${cat} — ${list.length} fragancia${list.length !== 1 ? 's' : ''}`; label.style.display = list.length ? '' : 'none' }
       grid.innerHTML = list.length ? list.map((p, idx) => {
-        const hasImg = !!p.images?.[0];
-        const eager = idx < 6;
-        const thumbs = (p.images?.length > 1 ? `<div class="product-gallery"><span class="gallery-dot active"></span><span class="gallery-dot"></span></div>` : '');
-        const thumbContent = hasImg
-          ? `<div class="prod-thumb-skeleton" id="sk-${p.id}"></div><img src="${p.images[0]}" alt="${escapeHtml(p.name)}" loading="${eager ? 'eager' : 'lazy'}"${eager ? ' fetchpriority="high"' : ''} decoding="async" onload="const sk=document.getElementById('sk-${p.id}');if(sk)sk.classList.add('loaded')"/>`
-          : `<div class="prod-thumb-svg">${PERFUME_SVG}</div>`;
+        const thumbContent = buildProductCardCarousel(p, idx);
         const isFav = typeof Favorites !== 'undefined' && Favorites.has(p.id);
-        return `<div class="prod-card" onclick="App.openProductDetail('${p.id}')" data-click-zone="productCard"><div class="prod-thumb">${thumbContent}${p.badge ? `<span class="prod-badge">${escapeHtml(p.badge)}</span>` : ''}<button class="prod-heart${isFav ? ' liked' : ''}" data-pid="${p.id}" onclick="event.stopPropagation();Favorites.toggle('${p.id}',this)" title="Favorito">♡</button></div><div class="prod-body"><div class="prod-cat">${escapeHtml(getCategoryName(p.cat))} / ${escapeHtml(getSubcategoryName(p.cat2))}</div><div class="prod-name">${escapeHtml(p.name)}</div><div class="prod-size">${escapeHtml(p.size || '35 ml · EDP')}</div>${thumbs}<div class="prod-footer"><span class="prod-price">$${p.price.toLocaleString('es-AR')}</span><button class="prod-atc" onclick="event.stopPropagation();Cart.addItem(PRODUCTS.find(x=>x.id==='${p.id}'))">+ Añadir</button></div></div></div>`;
-      }).join('') : '<div class="section-card" style="grid-column:1/-1"><div class="tbl-empty">No hay fragancias para ese filtro.</div></div>'
+        return `<div class="prod-card" onclick="App.openProductDetail('${p.id}')" data-click-zone="productCard"><div class="prod-thumb">${thumbContent}${p.badge ? `<span class="prod-badge">${escapeHtml(p.badge)}</span>` : ''}<button class="prod-heart${isFav ? ' liked' : ''}" data-pid="${p.id}" onclick="event.stopPropagation();Favorites.toggle('${p.id}',this)" title="Favorito">♡</button></div><div class="prod-body"><div class="prod-cat">${escapeHtml(getCategoryName(p.cat))} / ${escapeHtml(getSubcategoryName(p.cat2))}</div><div class="prod-name">${escapeHtml(p.name)}</div><div class="prod-size">${escapeHtml(p.size || '35 ml · EDP')}</div><div class="prod-footer"><span class="prod-price">$${p.price.toLocaleString('es-AR')}</span><button class="prod-atc" onclick="event.stopPropagation();Cart.addItem(PRODUCTS.find(x=>x.id==='${p.id}'))">+ Añadir</button></div></div></div>`;
+      }).join('') : '<div class="section-card" style="grid-column:1/-1"><div class="tbl-empty">No hay fragancias para ese filtro.</div></div>';
+      initProductCarousels(grid);
     }
     function upsertCustomerFromOrder(order) { const key = (order.phone || '').trim() || order.customerName.toLowerCase(); const idx = CUSTOMERS.findIndex(c => ((c.phone || '').trim() || c.name.toLowerCase()) === key); if (idx >= 0) { CUSTOMERS[idx].name = order.customerName; CUSTOMERS[idx].phone = order.phone; CUSTOMERS[idx].orders = (CUSTOMERS[idx].orders || 0) + 1; CUSTOMERS[idx].totalSpent = (CUSTOMERS[idx].totalSpent || 0) + order.total; CUSTOMERS[idx].lastOrder = order.date; CUSTOMERS[idx].segment = (CUSTOMERS[idx].totalSpent || 0) >= 50000 ? 'VIP' : 'Activo' } else { CUSTOMERS.push({ name: order.customerName, phone: order.phone, orders: 1, totalSpent: order.total, lastOrder: order.date, segment: order.total >= 50000 ? 'VIP' : 'Nuevo' }) } saveCustomersLS() }
     function trackZone(zone) { HEATMAP[zone] = (HEATMAP[zone] || 0) + 1; saveHeatmapLS(); const onAnaliticas = document.getElementById('sec-analiticas')?.style.display !== 'none'; if (onAnaliticas) Dash.renderHeatmap() }
