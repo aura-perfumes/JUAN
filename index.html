@@ -1986,6 +1986,15 @@
       transform: translateY(0)
     }
 
+    .cart-panel.peek {
+      transform: translateY(calc(100% - 170px))
+    }
+
+    .cart-overlay.peek {
+      opacity: 0;
+      pointer-events: none
+    }
+
     @media(min-width:768px) {
       .cart-panel {
         width: 420px;
@@ -2005,6 +2014,15 @@
 
       .cart-panel.open {
         transform: translateX(0)
+      }
+
+      .cart-panel.peek {
+        transform: translateX(110%)
+      }
+
+      .cart-overlay.peek {
+        opacity: 0;
+        pointer-events: none
       }
     }
 
@@ -6722,9 +6740,34 @@
           zoneBox.style.display = 'none'; zoneBox.innerHTML = '';
         }
       }
-      function open() { document.getElementById('cart-overlay').classList.add('open'); document.getElementById('cart-panel').classList.add('open'); document.body.style.overflow = 'hidden'; trackZone('cart'); render() }
-      function close() { document.getElementById('cart-overlay').classList.remove('open'); document.getElementById('cart-panel').classList.remove('open'); document.body.style.overflow = ''; closeSuggestions() }
-      function addItem(p) { const ex = items.find(i => i.id === p.id); if (ex) ex.qty = Math.min(ex.qty + 1, 99); else items.push({ id: p.id, name: p.name, price: p.price, emoji: p.emoji, images: p.images || [], size: p.size || '35 ml · EDP', qty: 1, _isPromo: !!p._isPromo, _promoId: p._promoId || null, _promoQty: p._promoQty || null, _promoFragrances: p._promoFragrances || null }); save(); render(); updateBadge(true); open(); trackZone('addToCart'); setTimeout(checkPromoEligibility, 300) }
+      function isMobileCartMode() { return window.innerWidth < 768 }
+      function open(mode = 'full') {
+        const overlay = document.getElementById('cart-overlay');
+        const panel = document.getElementById('cart-panel');
+        if (!overlay || !panel) return;
+        overlay.classList.remove('peek');
+        panel.classList.remove('peek');
+        overlay.classList.add('open');
+        panel.classList.add('open');
+        if (mode === 'peek' && isMobileCartMode()) {
+          overlay.classList.add('peek');
+          panel.classList.add('peek');
+          document.body.style.overflow = '';
+        } else {
+          document.body.style.overflow = 'hidden';
+          trackZone('cart');
+        }
+        render()
+      }
+      function close() {
+        const overlay = document.getElementById('cart-overlay');
+        const panel = document.getElementById('cart-panel');
+        overlay?.classList.remove('open', 'peek');
+        panel?.classList.remove('open', 'peek');
+        document.body.style.overflow = '';
+        closeSuggestions()
+      }
+      function addItem(p) { const ex = items.find(i => i.id === p.id); if (ex) ex.qty = Math.min(ex.qty + 1, 99); else items.push({ id: p.id, name: p.name, price: p.price, emoji: p.emoji, images: p.images || [], size: p.size || '35 ml · EDP', qty: 1, _isPromo: !!p._isPromo, _promoId: p._promoId || null, _promoQty: p._promoQty || null, _promoFragrances: p._promoFragrances || null }); save(); render(); updateBadge(true); open(isMobileCartMode() ? 'peek' : 'full'); trackZone('addToCart'); setTimeout(checkPromoEligibility, 300) }
       function updateQty(id, d) { const it = items.find(i => i.id === id); if (!it) return; it.qty += d; if (it.qty <= 0) items = items.filter(i => i.id !== id); save(); render() }
       function remove(id) { items = items.filter(i => i.id !== id); save(); render() }
       function render() {
