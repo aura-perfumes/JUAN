@@ -5341,6 +5341,271 @@
       }
     }
 
+
+    .promo-chip {
+      background: linear-gradient(135deg, #D4A843 0%, #9E7A10 100%) !important;
+      color: #1a1200 !important;
+      font-weight: 700;
+      letter-spacing: .05em;
+      animation: promoChipPulse 2.5s ease-in-out infinite;
+    }
+    .promo-chip.active {
+      box-shadow: 0 0 18px rgba(201, 168, 76, .55);
+    }
+    @keyframes promoChipPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(201, 168, 76, 0); }
+      50% { box-shadow: 0 0 12px 3px rgba(201, 168, 76, .35); }
+    }
+
+    /* ── PROMO MODAL ─────────────────────────────────── */
+    .promo-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .65);
+      z-index: 3500;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      backdrop-filter: blur(4px);
+    }
+    .promo-overlay.active { display: flex; }
+    .promo-modal {
+      background: #0f1220;
+      border: 1px solid rgba(201, 168, 76, .3);
+      border-radius: 18px;
+      width: 100%;
+      max-width: 540px;
+      max-height: 90vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, .7), 0 0 0 1px rgba(201, 168, 76, .1);
+    }
+    .promo-modal-hdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.2rem 1.5rem;
+      border-bottom: 1px solid rgba(201, 168, 76, .15);
+    }
+    .promo-modal-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.4rem;
+      color: #C9A84C;
+    }
+    .promo-modal-x {
+      background: none;
+      border: none;
+      color: rgba(255, 255, 255, .5);
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: .3rem .5rem;
+      transition: color .2s;
+    }
+    .promo-modal-x:hover { color: #fff; }
+    .promo-modal-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .promo-modal-ftr {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid rgba(201, 168, 76, .15);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .promo-confirm-btn {
+      flex: 1;
+      min-width: 160px;
+      padding: .75rem 1.2rem;
+      border-radius: 10px;
+      font-size: .82rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+    }
+    .promo-total-label {
+      font-size: .95rem;
+      font-weight: 700;
+      color: #C9A84C;
+    }
+    .promo-tiers-label,
+    .promo-frags-label {
+      font-size: .62rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, .4);
+      margin-bottom: .6rem;
+    }
+    .promo-tiers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: .5rem;
+    }
+    .promo-tier-btn {
+      background: rgba(255, 255, 255, .05);
+      border: 1.5px solid rgba(201, 168, 76, .2);
+      border-radius: 10px;
+      padding: .55rem .65rem;
+      color: rgba(255, 255, 255, .75);
+      font-size: .7rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s;
+      text-align: left;
+      line-height: 1.4;
+    }
+    .promo-tier-btn:hover {
+      border-color: rgba(201, 168, 76, .5);
+      background: rgba(201, 168, 76, .08);
+      color: #fff;
+    }
+    .promo-tier-btn.active {
+      border-color: #C9A84C;
+      background: rgba(201, 168, 76, .18);
+      color: #fff;
+      box-shadow: 0 0 10px rgba(201, 168, 76, .2);
+    }
+    .promo-tier-qty {
+      font-size: .85rem;
+      font-weight: 800;
+      color: #C9A84C;
+      display: block;
+    }
+    .promo-frags-info {
+      font-size: .72rem;
+      color: rgba(255, 255, 255, .35);
+      margin-bottom: .7rem;
+      font-style: italic;
+    }
+    .promo-frag-slots {
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+    }
+    .promo-frag-slot {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+    }
+    .promo-frag-num {
+      min-width: 22px;
+      height: 22px;
+      background: rgba(201, 168, 76, .15);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .62rem;
+      font-weight: 700;
+      color: #C9A84C;
+    }
+    .promo-frag-select {
+      flex: 1;
+      background: rgba(255, 255, 255, .07);
+      border: 1px solid rgba(201, 168, 76, .2);
+      border-radius: 8px;
+      padding: .48rem .7rem;
+      color: rgba(255, 255, 255, .85);
+      font-size: .76rem;
+      font-family: inherit;
+      outline: none;
+      appearance: none;
+      cursor: pointer;
+      transition: border-color .2s;
+    }
+    .promo-frag-select:focus { border-color: rgba(201, 168, 76, .5); }
+    .promo-frag-select option { background: #0f1220; color: #fff; }
+    .promo-note {
+      font-size: .72rem;
+      color: rgba(201, 168, 76, .65);
+      background: rgba(201, 168, 76, .07);
+      border-radius: 8px;
+      padding: .6rem .85rem;
+      line-height: 1.5;
+      border: 1px solid rgba(201, 168, 76, .15);
+    }
+    .promo-discount-toast {
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #1a2c1a 0%, #0d1f0d 100%);
+      border: 1.5px solid #10B981;
+      border-radius: 14px;
+      padding: .85rem 1.4rem;
+      z-index: 4000;
+      min-width: 280px;
+      max-width: 420px;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(16, 185, 129, .25);
+      animation: promoToastIn .35s cubic-bezier(.22, 1, .36, 1) forwards;
+      display: none;
+    }
+    .promo-discount-toast.visible { display: block; }
+    .promo-discount-toast-title {
+      font-size: .8rem;
+      font-weight: 800;
+      color: #10B981;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      margin-bottom: .3rem;
+    }
+    .promo-discount-toast-body {
+      font-size: .82rem;
+      color: rgba(255, 255, 255, .85);
+    }
+    .promo-discount-toast-savings {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #10B981;
+      margin-top: .3rem;
+    }
+    @keyframes promoToastIn {
+      from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+    .promo-card {
+      border: 1.5px solid rgba(201, 168, 76, .4) !important;
+      background: linear-gradient(145deg, #0f1a10 0%, #0a120a 100%) !important;
+    }
+    .promo-card .prod-badge {
+      background: linear-gradient(135deg, #D4A843 0%, #9E7A10 100%) !important;
+      color: #1a1200 !important;
+    }
+    .promo-card-tiers {
+      font-size: .65rem;
+      color: rgba(201, 168, 76, .7);
+      margin: .4rem 0;
+      line-height: 1.6;
+    }
+    .promo-admin-card {
+      margin-bottom: 1.25rem;
+      padding: .85rem;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    .promo-admin-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: .6rem;
+      flex-wrap: wrap;
+    }
+
+    @media(max-width: 540px) {
+      .promo-modal { max-height: 95vh; border-radius: 14px 14px 0 0; }
+      .promo-tiers-grid { grid-template-columns: 1fr 1fr; }
+    }
+
   </style>
 </head>
 
@@ -5902,6 +6167,13 @@
           <button class="btn-dark" style="border-radius:99px;padding:.55rem 1.4rem;font-size:.7rem;letter-spacing:.08em"
             onclick="Dash.saveNosotros()">Guardar Nosotros</button>
         </div>
+
+        <div class="config-section">
+          <div class="config-section-title">🔥 Gestión de PROMOS</div>
+          <div class="config-hint" style="margin-bottom:.9rem">Configurá las fragancias disponibles, activá o desactivá cada promo y guardá los cambios.</div>
+          <div id="promo-admin-list"></div>
+          <button class="btn-dark" style="border-radius:99px;padding:.55rem 1.4rem;font-size:.7rem" onclick="PromoAdmin.save()">Guardar cambios en promos</button>
+        </div>
       </div>
     </main>
   </div>
@@ -6258,6 +6530,82 @@
         { id: 'oriental', categoryId: 'madera', name: 'Oriental' }
       ]
     };
+    const PROMOS_DATA = [
+      {
+        id: 'promo-tubitos-arabes',
+        name: 'Tubitos Árabes 35ml',
+        emoji: '🌸',
+        productCategory: 'promos',
+        active: true,
+        tiers: [
+          { qty: 1, unitPrice: 8000, total: 8000, label: '1x $8.000' },
+          { qty: 2, unitPrice: 7500, total: 15000, label: '2x $15.000 ($7.500 c/u)' },
+          { qty: 3, unitPrice: 7000, total: 21000, label: '3x $21.000 ($7.000 c/u)' },
+          { qty: 4, unitPrice: 7000, total: 28000, label: '4x $28.000 ($7.000 c/u)' },
+          { qty: 5, unitPrice: 7000, total: 35000, label: '5x $35.000 ($7.000 c/u)' },
+          { qty: 6, unitPrice: 7000, total: 42000, label: '6x $42.000 ($7.000 c/u)' },
+          { qty: 7, unitPrice: 7000, total: 49000, label: '7x $49.000 ($7.000 c/u)' },
+          { qty: 8, unitPrice: 7000, total: 56000, label: '8x $56.000 ($7.000 c/u)' },
+          { qty: 9, unitPrice: 7000, total: 63000, label: '9x $63.000 ($7.000 c/u)' },
+          { qty: 10, unitPrice: 4500, total: 45000, label: '10x $45.000 ($4.500 c/u) — MAYORISTA' },
+          { qty: 25, unitPrice: 4000, total: 100000, label: '25x $100.000 ($4.000 c/u) — MAYORISTA' },
+          { qty: 50, unitPrice: 3500, total: 175000, label: '50x $175.000 ($3.500 c/u) — MAYORISTA' },
+        ],
+        fragrances: ['Khamrah', 'Erba Pura', 'Yara', 'Yara Moi', '9pm', 'Asad', 'Odyssey Tyrant', 'Rose Velours', 'Musc Blanc', 'Cedar Smoke', 'Odyssey Candeo', 'Absolu Noir', 'Odyssey Spectra', 'Odyssey Limoni'],
+        note: 'Desde 4 hasta 9 unidades: $7.000 c/u. Precio mayorista desde 10 unidades.',
+      },
+      {
+        id: 'promo-bodysplash-100',
+        name: 'Bodysplash 100ml',
+        emoji: '💧',
+        productCategory: 'promos',
+        active: true,
+        tiers: [
+          { qty: 1, unitPrice: 15000, total: 15000, label: '1x $15.000' },
+          { qty: 2, unitPrice: 13500, total: 27000, label: '2x $27.000 ($13.500 c/u)' },
+          { qty: 3, unitPrice: 12000, total: 36000, label: '3x $36.000 ($12.000 c/u)' },
+        ],
+        fragrances: ['Khamrah', 'Erba Pura', 'Yara', 'Yara Candy', 'Absolu Noir', 'Rose Velours', 'Musc Blanc', 'Odyssey Candeo', 'Fakhar Rose'],
+        note: 'Bodysplash formato 100ml. Armá tu combo eligiendo fragancias.',
+      },
+      {
+        id: 'promo-bodysplash-250',
+        name: 'Bodysplash 250ml',
+        emoji: '🌊',
+        productCategory: 'promos',
+        active: true,
+        tiers: [
+          { qty: 1, unitPrice: 25000, total: 25000, label: '1x $25.000' },
+          { qty: 2, unitPrice: 22000, total: 44000, label: '2x $44.000 ($22.000 c/u)' },
+          { qty: 3, unitPrice: 20000, total: 60000, label: '3x $60.000 ($20.000 c/u)' },
+        ],
+        fragrances: ['Khamrah', 'Erba Pura', 'Yara', 'Yara Candy', 'Absolu Noir', 'Rose Velours', 'Khamrah Qahwa', 'Fakhar Rose', 'Fakhar Black'],
+        note: 'Bodysplash formato 250ml. Armá tu combo eligiendo fragancias.',
+      },
+    ];
+
+    function getActivePromos() {
+      return PROMOS_DATA.filter(p => p.active !== false);
+    }
+
+    function getPromoTier(promo, qty) {
+      if (!promo || !qty) return null;
+      const exact = promo.tiers.find(t => t.qty === qty);
+      if (exact) return exact;
+      if (promo.id === 'promo-tubitos-arabes' && qty >= 4 && qty <= 9) {
+        return { qty, unitPrice: 7000, total: qty * 7000, label: `${qty}x $${(qty * 7000).toLocaleString('es-AR')} ($7.000 c/u)` };
+      }
+      return null;
+    }
+
+    function getPromoDiscount(promo, qty) {
+      const tier = getPromoTier(promo, qty);
+      if (!tier) return null;
+      const normalPrice = promo.tiers[0].unitPrice;
+      const saved = (normalPrice * qty) - tier.total;
+      return { tier, saved };
+    }
+
     const DEFAULT_HEATMAP = { hero: 18, filters: 11, productCard: 25, addToCart: 20, cart: 8, whatsapp: 7, nav: 6, about: 4 };
     const DEFAULT_STORE_CONFIG = {
       waNum: '5492942444236', waName: 'AURA — Tienda Online', bannerText: 'Nueva colección Otoño/Invierno 2026 — Envío gratis (Cipolletti o Neuquén) en pedidos mayores a $50.000', bannerFg: '#C9A84C', bannerOn: true,
@@ -6376,7 +6724,7 @@
       }
       function open() { document.getElementById('cart-overlay').classList.add('open'); document.getElementById('cart-panel').classList.add('open'); document.body.style.overflow = 'hidden'; trackZone('cart'); render() }
       function close() { document.getElementById('cart-overlay').classList.remove('open'); document.getElementById('cart-panel').classList.remove('open'); document.body.style.overflow = ''; closeSuggestions() }
-      function addItem(p) { const ex = items.find(i => i.id === p.id); if (ex) ex.qty = Math.min(ex.qty + 1, 99); else items.push({ id: p.id, name: p.name, price: p.price, emoji: p.emoji, images: p.images || [], size: p.size || '35 ml · EDP', qty: 1 }); save(); render(); updateBadge(true); open(); trackZone('addToCart') }
+      function addItem(p) { const ex = items.find(i => i.id === p.id); if (ex) ex.qty = Math.min(ex.qty + 1, 99); else items.push({ id: p.id, name: p.name, price: p.price, emoji: p.emoji, images: p.images || [], size: p.size || '35 ml · EDP', qty: 1, _isPromo: !!p._isPromo, _promoId: p._promoId || null, _promoQty: p._promoQty || null, _promoFragrances: p._promoFragrances || null }); save(); render(); updateBadge(true); open(); trackZone('addToCart'); setTimeout(checkPromoEligibility, 300) }
       function updateQty(id, d) { const it = items.find(i => i.id === id); if (!it) return; it.qty += d; if (it.qty <= 0) items = items.filter(i => i.id !== id); save(); render() }
       function remove(id) { items = items.filter(i => i.id !== id); save(); render() }
       function render() {
@@ -6421,11 +6769,62 @@
       return { open, close, addItem, updateQty, remove, total, count, items: () => items, onAddrInput, selectAddr, calcDelivery, confirmWhatsApp, closeSuggestions, selectShippingMethod, selectZone };
     })();
 
+    function getCartPromoType(item) {
+      const text = `${item.name || ''} ${item.size || ''}`.toLowerCase();
+      if (text.includes('35 ml') || text.includes('35ml') || text.includes('tubito')) return 'promo-tubitos-arabes';
+      if (text.includes('250 ml') || text.includes('250ml') || text.includes('250 ml')) return 'promo-bodysplash-250';
+      if (text.includes('100 ml') || text.includes('100ml') || text.includes('bodysplash 100')) return 'promo-bodysplash-100';
+      return null;
+    }
+
+    function checkPromoEligibility() {
+      const cartItems = Cart.items();
+      if (!cartItems.length) return;
+      for (const promo of getActivePromos()) {
+        const totalQty = cartItems.reduce((sum, item) => {
+          if (item._isPromo) return sum;
+          return getCartPromoType(item) === promo.id ? sum + Number(item.qty || 0) : sum;
+        }, 0);
+        const discount = getPromoDiscount(promo, totalQty);
+        if (discount && discount.saved > 0) {
+          showPromoDiscountToast(promo, discount);
+          return;
+        }
+      }
+    }
+
+    let _promoToastTimer = null;
+    function showPromoDiscountToast(promo, discount) {
+      let toast = document.getElementById('promo-discount-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'promo-discount-toast';
+        toast.className = 'promo-discount-toast';
+        document.body.appendChild(toast);
+      }
+      toast.innerHTML = `
+        <div class="promo-discount-toast-title">🎉 ¡Descuento disponible!</div>
+        <div class="promo-discount-toast-body">Con ${discount.tier.qty} unidades podés aprovechar la promo <strong>${escapeHtml(promo.name)}</strong></div>
+        <div class="promo-discount-toast-savings">Ahorrás $${discount.saved.toLocaleString('es-AR')}</div>
+        <div style="margin-top:.5rem">
+          <button onclick="PromoModal.open('${promo.id}');document.getElementById('promo-discount-toast').classList.remove('visible')" style="background:linear-gradient(135deg,#D4A843,#9E7A10);color:#1a1200;border:none;border-radius:8px;padding:.4rem .9rem;font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit">Ver promo →</button>
+        </div>`;
+      toast.classList.add('visible');
+      clearTimeout(_promoToastTimer);
+      _promoToastTimer = setTimeout(() => toast.classList.remove('visible'), 7000);
+    }
+
     let revenueChart = null, analLineChart = null, analDonutChart = null, currentFilter = 'todos', currentSearch = '', invStatusFilter = 'todos', invTextFilter = '';
     function getRevenueSeries() { if (ORDERS.length) { const byMonth = {}; ORDERS.forEach(o => { const d = new Date(o.date); const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; byMonth[k] = (byMonth[k] || 0) + o.total }); const keys = Object.keys(byMonth).sort(); return { labels: keys.map(k => { const [y, m] = k.split('-'); return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString('es-AR', { month: 'short' }) }), data: keys.map(k => byMonth[k]) } } return { labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'], data: [800, 950, 1100, 980, 1350, 1200] } }
     function initChart(period = 'Semanal') { const ctx = document.getElementById('revenue-chart'); if (!ctx) return; let d; if (period === 'Semanal') { const last7 = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']; const totals = [0, 0, 0, 0, 0, 0, 0]; ORDERS.forEach(o => { const day = (new Date(o.date).getDay() + 6) % 7; totals[day] += o.total }); d = { labels: last7, data: totals.some(Boolean) ? totals : [120, 180, 160, 220, 195, 285, 250] } } else if (period === 'Mensual') { d = getRevenueSeries() } else { const yearly = {}; ORDERS.forEach(o => { const y = new Date(o.date).getFullYear(); yearly[y] = (yearly[y] || 0) + o.total }); const years = Object.keys(yearly).sort(); d = { labels: years.length ? years : ['2021', '2022', '2023', '2024', '2025', '2026'], data: years.length ? years.map(y => yearly[y]) : [5000, 6200, 7800, 9100, 11000, 14500] } } if (revenueChart) revenueChart.destroy(); revenueChart = new Chart(ctx, { type: 'line', data: { labels: d.labels, datasets: [{ data: d.data, borderColor: '#10B981', backgroundColor: 'rgba(16,185,129,.08)', tension: .4, pointBackgroundColor: '#10B981', pointRadius: 4, fill: true }] }, options: { plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 11 } } }, y: { grid: { color: 'rgba(0,0,0,.05)' }, ticks: { color: '#94a3b8', font: { size: 11 }, callback: v => '$' + Number(v).toLocaleString('es-AR') } } }, responsive: true, maintainAspectRatio: true } }) }
     function buildHeroTitle(title) { const words = String(title || '').trim().split(/\s+/).filter(Boolean); if (!words.length) return 'AURA'; const last = words.pop(); return `${escapeHtml(words.join(' '))}${words.length ? '<br>' : ''}<em>${escapeHtml(last)}</em>` }
-    function renderStoreFilters() { const box = document.getElementById('filter-chips'); if (!box) return; box.innerHTML = `<button class="chip ${currentFilter === 'todos' ? 'active' : ''}" data-cat="todos" onclick="App.filter(this)">Todos</button>` + TAXONOMY.categories.map(c => `<button class="chip ${currentFilter === c.id ? 'active' : ''}" data-cat="${c.id}" onclick="App.filter(this)">${escapeHtml(c.name)}</button>`).join('') }
+    function renderStoreFilters() {
+      const box = document.getElementById('filter-chips');
+      if (!box) return;
+      box.innerHTML = `<button class="chip ${currentFilter === 'todos' ? 'active' : ''}" data-cat="todos" onclick="App.filter(this)">Todos</button>` +
+        `<button class="chip promo-chip ${currentFilter === 'promos' ? 'active' : ''}" data-cat="promos" onclick="App.filter(this)">🔥 PROMOS</button>` +
+        TAXONOMY.categories.map(c => `<button class="chip ${currentFilter === c.id ? 'active' : ''}" data-cat="${c.id}" onclick="App.filter(this)">${escapeHtml(c.name)}</button>`).join('');
+    }
     function buildProductCardCarousel(p, idx) {
       const images = Array.isArray(p.images) && p.images.length ? p.images.filter(Boolean) : [];
       const eager = idx < 6;
@@ -6540,8 +6939,52 @@
     }
 
     function renderProducts() {
-      const grid = document.getElementById('product-grid'); if (!grid) return; renderStoreFilters(); let list = PRODUCTS.filter(p => { const q = currentSearch.toLowerCase().trim(); const matchesFilter = currentFilter === 'todos' || p.cat === currentFilter || p.cat2 === currentFilter; const hay = [p.name, p.desc, getCategoryName(p.cat), getSubcategoryName(p.cat2)].join(' ').toLowerCase(); return matchesFilter && (!q || hay.includes(q)) }); const label = document.getElementById('store-products-label');
-      if (label) { const cat = currentFilter === 'todos' ? 'Colección completa' : TAXONOMY.categories.find(c => c.id === currentFilter)?.name || 'Colección'; label.textContent = `${cat} — ${list.length} fragancia${list.length !== 1 ? 's' : ''}`; label.style.display = list.length ? '' : 'none' }
+      const grid = document.getElementById('product-grid');
+      if (!grid) return;
+      renderStoreFilters();
+      const label = document.getElementById('store-products-label');
+
+      if (currentFilter === 'promos') {
+        const promos = getActivePromos();
+        if (label) {
+          label.textContent = '🔥 Promos y Combos';
+          label.style.display = promos.length ? '' : 'none';
+        }
+        grid.innerHTML = promos.length ? promos.map(promo => {
+          const firstTier = promo.tiers[0];
+          const tiersPreview = promo.tiers.slice(0, 3).map(t => t.label).join('<br>');
+          return `<div class="prod-card promo-card" onclick="PromoModal.open('${promo.id}')">
+            <div class="prod-thumb" style="display:flex;align-items:center;justify-content:center;font-size:3.5rem;background:linear-gradient(145deg,#1a2c10,#0d1a08)">
+              ${promo.emoji}
+              <span class="prod-badge" style="position:absolute;top:.5rem;right:.5rem;background:linear-gradient(135deg,#D4A843,#9E7A10);color:#1a1200;padding:.2rem .55rem;border-radius:99px;font-size:.58rem;font-weight:800;letter-spacing:.06em">PROMO</span>
+            </div>
+            <div class="prod-body">
+              <div class="prod-name" style="color:#C9A84C">${escapeHtml(promo.name)}</div>
+              <div class="promo-card-tiers">${tiersPreview}</div>
+              <div class="prod-size" style="color:rgba(255,255,255,.35);font-size:.65rem">Desde $${firstTier.unitPrice.toLocaleString('es-AR')}/u · ${promo.fragrances.length} fragancias</div>
+            </div>
+            <div class="prod-footer">
+              <span class="prod-price">desde $${firstTier.total.toLocaleString('es-AR')}</span>
+              <button class="prod-atc" style="background:linear-gradient(135deg,#D4A843,#9E7A10);color:#1a1200;font-weight:700" onclick="event.stopPropagation();PromoModal.open('${promo.id}')">Armar combo</button>
+            </div>
+          </div>`;
+        }).join('') : '<div class="section-card" style="grid-column:1/-1"><div class="tbl-empty">No hay promos activas en este momento.</div></div>';
+        return;
+      }
+
+      let list = PRODUCTS.filter(p => {
+        const q = currentSearch.toLowerCase().trim();
+        const matchesFilter = currentFilter === 'todos' || p.cat === currentFilter || p.cat2 === currentFilter;
+        const hay = [p.name, p.desc, getCategoryName(p.cat), getSubcategoryName(p.cat2)].join(' ').toLowerCase();
+        return matchesFilter && (!q || hay.includes(q));
+      });
+
+      if (label) {
+        const cat = currentFilter === 'todos' ? 'Colección completa' : TAXONOMY.categories.find(c => c.id === currentFilter)?.name || 'Colección';
+        label.textContent = `${cat} — ${list.length} fragancia${list.length !== 1 ? 's' : ''}`;
+        label.style.display = list.length ? '' : 'none';
+      }
+
       grid.innerHTML = list.length ? list.map((p, idx) => {
         const thumbContent = buildProductCardCarousel(p, idx);
         const isFav = typeof Favorites !== 'undefined' && Favorites.has(p.id);
@@ -6706,12 +7149,12 @@
     }
 
     const App = {
-      show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); const el = document.getElementById(id); if (el) el.classList.add('active'); if (id === 's-dashboard') { setTimeout(() => { initChart(); Dash.renderInventory(); Dash.renderPedidos(); Dash.renderClientes(); Dash.updatePanelKPIs(); Dash.renderTaxonomy() }, 80) } if (id === 's-store') { renderProducts(); applyStoreConfig() } window.scrollTo(0, 0) },
+      show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); const el = document.getElementById(id); if (el) el.classList.add('active'); if (id === 's-dashboard') { setTimeout(() => { initChart(); Dash.renderInventory(); Dash.renderPedidos(); Dash.renderClientes(); Dash.updatePanelKPIs(); Dash.renderTaxonomy(); PromoAdmin.render() }, 80) } if (id === 's-store') { renderProducts(); applyStoreConfig() } window.scrollTo(0, 0) },
       goStaff() { this.show('s-staff-gate'); document.getElementById('staff-pwd').focus() },
       goStore() { this.show('s-store'); setTimeout(() => { const st = document.getElementById('s-store'); if (st) st.scrollTo({ top: 0, behavior: 'instant' }) }, 30) },
       staffLogin() { const pwd = document.getElementById('staff-pwd').value.trim(); if (pwd === 'piromagu2026') { this.show('s-dashboard') } else { document.getElementById('staff-pwd').style.borderColor = '#ef4444'; setTimeout(() => document.getElementById('staff-pwd').style.borderColor = '', 1200) } },
       togglePwd() { const inp = document.getElementById('staff-pwd'); inp.type = inp.type === 'password' ? 'text' : 'password' },
-      dashNav(btn, section) { document.querySelectorAll('.dash-nav-item').forEach(b => b.classList.remove('active')); btn.classList.add('active');['panel', 'inventario', 'pedidos', 'clientes', 'analiticas', 'config'].forEach(s => { const el = document.getElementById('sec-' + s); if (el) el.style.display = s === section ? '' : 'none' }); if (section === 'inventario') Dash.renderInventory(); else if (section === 'pedidos') Dash.renderPedidos(); else if (section === 'clientes') Dash.renderClientes(); else if (section === 'analiticas') setTimeout(() => Dash.initAnalytics(), 80); else if (section === 'config') setTimeout(() => Dash.renderTaxonomy(), 50) },
+      dashNav(btn, section) { document.querySelectorAll('.dash-nav-item').forEach(b => b.classList.remove('active')); btn.classList.add('active');['panel', 'inventario', 'pedidos', 'clientes', 'analiticas', 'config'].forEach(s => { const el = document.getElementById('sec-' + s); if (el) el.style.display = s === section ? '' : 'none' }); if (section === 'inventario') Dash.renderInventory(); else if (section === 'pedidos') Dash.renderPedidos(); else if (section === 'clientes') Dash.renderClientes(); else if (section === 'analiticas') setTimeout(() => Dash.initAnalytics(), 80); else if (section === 'config') setTimeout(() => { Dash.renderTaxonomy(); PromoAdmin.render() }, 50) },
       chartPeriod(p, btn) { document.querySelectorAll('.chart-tab').forEach(b => b.classList.remove('active')); btn.classList.add('active'); initChart(p) },
       filter(btn) { document.querySelectorAll('.chip').forEach(c => c.classList.remove('active')); btn.classList.add('active'); currentFilter = btn.dataset.cat; trackZone('filters'); renderProducts() },
       search(q) { currentSearch = q; renderProducts() },
@@ -6725,10 +7168,12 @@
 
     (function () {
       try { const nos = JSON.parse(localStorage.getItem('aura_nosotros') || 'null'); if (nos) { if (nos.title) document.getElementById('nos-modal-title').textContent = nos.title; if (nos.p1) document.getElementById('nos-modal-p1').textContent = nos.p1; if (nos.p2) document.getElementById('nos-modal-p2').textContent = nos.p2;['s1', 's2', 's3'].forEach(k => { if (nos[k + 'v']) { document.getElementById('nos-' + k + 'v').textContent = nos[k + 'v']; document.getElementById('nos-' + k + 'l').textContent = nos[k + 'l'] || '' } }) } } catch (e) { }
+      PromoAdmin.loadOverrides();
       applyStoreConfig();
       renderStoreFilters();
       renderProducts();
       Dash.renderTaxonomy();
+      PromoAdmin.render();
       Dash.updatePanelKPIs();
       document.getElementById('ap-cat')?.addEventListener('change', () => Dash.syncSubcategorySelect());
       document.querySelectorAll('[data-click-zone]').forEach(el => el.addEventListener('click', e => trackZone(e.currentTarget.dataset.clickZone)));
@@ -7156,6 +7601,22 @@ const MobNav = (() => {
 /* FIN — MobNav */
 </script>
 
+
+  <!-- ══ PROMO COMBO MODAL ═══════════════════════════ -->
+  <div class="promo-overlay" id="promo-modal" onclick="if(event.target===this)PromoModal.close()">
+    <div class="promo-modal">
+      <div class="promo-modal-hdr">
+        <div class="promo-modal-title display" id="promo-modal-title">Armá tu combo</div>
+        <button class="promo-modal-x" onclick="PromoModal.close()">✕</button>
+      </div>
+      <div class="promo-modal-body" id="promo-modal-body"></div>
+      <div class="promo-modal-ftr">
+        <button class="btn-dark promo-confirm-btn" id="promo-confirm-btn" onclick="PromoModal.addToCart()">🛍 Agregar al carrito</button>
+        <span class="promo-total-label" id="promo-total-label"></span>
+      </div>
+    </div>
+  </div>
+
 <!-- ══ CENTRAL DE SUGERENCIAS — JavaScript ══════════════════════════════ -->
 <script>
 /* ══════════════════════════════════════════════════════════════════════════
@@ -7164,6 +7625,158 @@ const MobNav = (() => {
    La tabla de recomendaciones cruza categorías y similitudes de perfumes.
    Modular: no modifica ningún código existente.
 ══════════════════════════════════════════════════════════════════════════ */
+
+/* ══ PROMO MODAL — Sistema de combos armables ══════ */
+const PromoModal = (() => {
+  let currentPromo = null;
+  let selectedTier = null;
+  let selectedFragrances = [];
+
+  function open(promoId) {
+    const promo = getActivePromos().find(p => p.id === promoId);
+    if (!promo) return;
+    currentPromo = promo;
+    selectedTier = promo.tiers[0];
+    selectedFragrances = Array.from({ length: selectedTier.qty }, (_, i) => promo.fragrances[i] || promo.fragrances[0] || '');
+    render();
+    document.getElementById('promo-modal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function close() {
+    document.getElementById('promo-modal').classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  function selectTier(qty) {
+    const promo = currentPromo;
+    if (!promo) return;
+    const tier = getPromoTier(promo, qty);
+    if (!tier) return;
+    selectedTier = tier;
+    while (selectedFragrances.length < tier.qty) selectedFragrances.push(promo.fragrances[0] || '');
+    if (selectedFragrances.length > tier.qty) selectedFragrances = selectedFragrances.slice(0, tier.qty);
+    render();
+  }
+
+  function updateFragrance(idx, value) {
+    selectedFragrances[idx] = value;
+    updateFooter();
+  }
+
+  function render() {
+    const promo = currentPromo;
+    if (!promo) return;
+    const body = document.getElementById('promo-modal-body');
+    document.getElementById('promo-modal-title').textContent = promo.name;
+    const tierButtons = promo.tiers.map(t => `
+      <button class="promo-tier-btn ${selectedTier?.qty === t.qty ? 'active' : ''}" onclick="PromoModal.selectTier(${t.qty})">
+        <span class="promo-tier-qty">${t.qty}x</span>
+        <span>$${t.total.toLocaleString('es-AR')}</span>
+      </button>`).join('');
+    const fragCount = selectedTier?.qty || 1;
+    const fragSlots = Array.from({ length: Math.min(fragCount, 50) }, (_, i) => `
+      <div class="promo-frag-slot">
+        <div class="promo-frag-num">${i + 1}</div>
+        <select class="promo-frag-select" onchange="PromoModal.updateFragrance(${i}, this.value)">
+          ${promo.fragrances.map(f => `<option value="${escapeHtml(f)}" ${selectedFragrances[i] === f ? 'selected' : ''}>${escapeHtml(f)}</option>`).join('')}
+        </select>
+      </div>`).join('');
+    body.innerHTML = `
+      <div>
+        <div class="promo-tiers-label">Elegí la cantidad</div>
+        <div class="promo-tiers-grid">${tierButtons}</div>
+      </div>
+      <div>
+        <div class="promo-frags-label">Elegí las fragancias (${fragCount} ${fragCount === 1 ? 'unidad' : 'unidades'})</div>
+        <div class="promo-frags-info">Podés repetir fragancias. Cada selector equivale a una unidad.</div>
+        <div class="promo-frag-slots">${fragSlots}</div>
+      </div>
+      ${promo.note ? `<div class="promo-note">ℹ️ ${escapeHtml(promo.note)}</div>` : ''}
+    `;
+    updateFooter();
+  }
+
+  function updateFooter() {
+    if (!selectedTier) return;
+    const label = document.getElementById('promo-total-label');
+    if (label) label.textContent = `Total: $${selectedTier.total.toLocaleString('es-AR')}`;
+  }
+
+  function addToCart() {
+    const promo = currentPromo;
+    const tier = selectedTier;
+    if (!promo || !tier) return;
+    const frags = selectedFragrances.slice(0, tier.qty);
+    Cart.addItem({
+      id: `${promo.id}-${Date.now()}`,
+      name: `${promo.name} — Combo x${tier.qty}`,
+      price: tier.total,
+      qty: 1,
+      emoji: promo.emoji,
+      images: [],
+      size: `x${tier.qty}: ${frags.join(', ')}`,
+      _isPromo: true,
+      _promoId: promo.id,
+      _promoQty: tier.qty,
+      _promoFragrances: frags,
+    });
+    close();
+    showToast(`Combo "${promo.name}" x${tier.qty} agregado al carrito ✓`);
+  }
+
+  return { open, close, selectTier, updateFragrance, addToCart };
+})();
+
+const PromoAdmin = (() => {
+  function render() {
+    const list = document.getElementById('promo-admin-list');
+    if (!list) return;
+    list.innerHTML = PROMOS_DATA.map(promo => {
+      const fragStr = (promo.fragrances || []).join(', ');
+      return `
+        <div class="promo-admin-card">
+          <div class="promo-admin-head">
+            <div style="font-weight:700;font-size:.85rem">${promo.emoji} ${escapeHtml(promo.name)}</div>
+            <div class="toggle-row" style="margin:0">
+              <label class="toggle"><input type="checkbox" id="promo-active-${promo.id}" ${promo.active !== false ? 'checked' : ''}/><span class="toggle-slider"></span></label>
+              <span class="toggle-label">Promo activa</span>
+            </div>
+          </div>
+          <label class="config-label">Fragancias disponibles</label>
+          <textarea class="config-textarea" id="promo-frags-${promo.id}" style="min-height:70px">${escapeHtml(fragStr)}</textarea>
+        </div>`;
+    }).join('');
+  }
+
+  function save() {
+    const overrides = {};
+    PROMOS_DATA.forEach(promo => {
+      const el = document.getElementById(`promo-frags-${promo.id}`);
+      const active = document.getElementById(`promo-active-${promo.id}`);
+      const frags = (el?.value || '').split(',').map(f => f.trim()).filter(Boolean);
+      promo.fragrances = frags.length ? frags : promo.fragrances;
+      promo.active = !!active?.checked;
+      overrides[promo.id] = { fragrances: promo.fragrances, active: promo.active };
+    });
+    localStorage.setItem('aura_promo_overrides', JSON.stringify(overrides));
+    renderProducts();
+    showToast('Promos guardadas ✓');
+  }
+
+  function loadOverrides() {
+    try {
+      const overrides = JSON.parse(localStorage.getItem('aura_promo_overrides') || '{}');
+      PROMOS_DATA.forEach(promo => {
+        if (Array.isArray(overrides[promo.id]?.fragrances) && overrides[promo.id].fragrances.length) promo.fragrances = overrides[promo.id].fragrances;
+        if (typeof overrides[promo.id]?.active === 'boolean') promo.active = overrides[promo.id].active;
+      });
+    } catch (e) {}
+  }
+
+  return { render, save, loadOverrides };
+})();
+
 const SugCenter = (() => {
 
   // ── Grupos de sugerencias (bidireccional) ───────────────────────────────
