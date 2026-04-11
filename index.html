@@ -1988,7 +1988,7 @@
     }
 
     .cart-panel.peek {
-      transform: translateY(calc(100% - 170px))
+      transform: translateY(100%)
     }
 
     .cart-overlay.peek {
@@ -5668,7 +5668,7 @@
       .cart-panel.peek {
         max-height: 72vh;
         min-height: 55vh;
-        transform: translateY(calc(100% - 55vh));
+        transform: translateY(100%);
       }
 
       #cart-panel.peek,
@@ -6858,15 +6858,8 @@
         panel.style.minHeight = '';
         overlay.classList.add('open');
         panel.classList.add('open');
-        if (mode === 'peek' && isMobileCartMode()) {
-          overlay.classList.add('peek');
-          panel.classList.add('peek');
-          panel.style.minHeight = '55vh';
-          document.body.style.overflow = '';
-        } else {
-          document.body.style.overflow = 'hidden';
-          trackZone('cart');
-        }
+        document.body.style.overflow = 'hidden';
+        trackZone('cart');
         render()
       }
       function close() {
@@ -6877,7 +6870,7 @@
         document.body.style.overflow = '';
         closeSuggestions()
       }
-      function addItem(p) { const ex = items.find(i => i.id === p.id); if (ex) ex.qty = Math.min(ex.qty + 1, 99); else items.push({ id: p.id, name: p.name, price: p.price, emoji: p.emoji, images: p.images || [], size: p.size || '35 ml · EDP', qty: 1, _isPromo: !!p._isPromo, _promoId: p._promoId || null, _promoQty: p._promoQty || null, _promoFragrances: p._promoFragrances || null }); save(); render(); updateBadge(true); open(isMobileCartMode() ? 'peek' : 'full'); trackZone('addToCart'); setTimeout(checkPromoEligibility, 300) }
+      function addItem(p) { const ex = items.find(i => i.id === p.id); if (ex) ex.qty = Math.min(ex.qty + 1, 99); else items.push({ id: p.id, name: p.name, price: p.price, emoji: p.emoji, images: p.images || [], size: p.size || '35 ml · EDP', qty: 1, _isPromo: !!p._isPromo, _promoId: p._promoId || null, _promoQty: p._promoQty || null, _promoFragrances: p._promoFragrances || null }); save(); render(); updateBadge(true); open('full'); trackZone('addToCart'); setTimeout(checkPromoEligibility, 300) }
       function updateQty(id, d) { const it = items.find(i => i.id === id); if (!it) return; it.qty += d; if (it.qty <= 0) items = items.filter(i => i.id !== id); save(); render() }
       function remove(id) { items = items.filter(i => i.id !== id); save(); render() }
       function render() {
