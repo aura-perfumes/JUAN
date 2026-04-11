@@ -2108,9 +2108,11 @@
 
     .cart-item {
       display: flex;
-      gap: 12px;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid rgba(201, 168, 76, .1)
+      gap: .75rem;
+      align-items: flex-start;
+      padding: .75rem 0;
+      border-bottom: 1px solid var(--border);
+      min-height: 80px;
     }
 
     .cart-item:last-child {
@@ -2119,8 +2121,8 @@
     }
 
     .ci-thumb {
-      width: 58px;
-      height: 58px;
+      width: 64px;
+      height: 64px;
       border-radius: 10px;
       background: #0C0F1A;
       display: flex;
@@ -2136,8 +2138,9 @@
     }
 
     .ci-name {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 1rem;
+      font-family: 'Montserrat', sans-serif;
+      font-size: .92rem;
+      font-weight: 600;
       color: #fff;
       white-space: nowrap;
       overflow: hidden;
@@ -2145,15 +2148,15 @@
     }
 
     .ci-sub {
-      font-size: .62rem;
-      color: rgba(255, 255, 255, .3);
+      font-size: .75rem;
+      color: var(--muted);
       margin-top: 2px
     }
 
     .ci-price {
-      font-size: .84rem;
-      font-weight: 600;
-      color: var(--gold);
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--text);
       margin-top: 4px
     }
 
@@ -5619,6 +5622,93 @@
       flex-wrap: wrap;
     }
 
+    .promo-admin-grid {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) 88px;
+      gap: .75rem;
+      margin-bottom: .85rem;
+    }
+
+    .promo-tiers-admin {
+      display: flex;
+      flex-direction: column;
+      gap: .6rem;
+      margin-bottom: .85rem;
+    }
+
+    .promo-tier-row {
+      display: grid;
+      grid-template-columns: 92px minmax(0,1fr) 42px;
+      gap: .55rem;
+      align-items: end;
+    }
+
+    .promo-tier-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: .5rem;
+    }
+
+    .promo-delete-btn {
+      border: 1px solid rgba(239, 68, 68, .28);
+      color: var(--red);
+      background: #fff;
+    }
+
+    .promo-delete-btn:hover {
+      border-color: rgba(239, 68, 68, .6);
+      background: rgba(239, 68, 68, .06);
+    }
+
+    @media(max-width:767px) {
+      .cart-panel.peek {
+        max-height: 72vh;
+        min-height: 55vh;
+        transform: translateY(calc(100% - 55vh));
+      }
+
+      #cart-panel.peek #cart-body,
+      .cart-panel.peek #cart-body,
+      .cart-panel.peek .cart-body {
+        overflow-y: auto;
+        max-height: 42vh;
+      }
+
+      .cart-item {
+        min-height: 80px;
+      }
+
+      .ci-thumb {
+        width: 64px;
+        height: 64px;
+        flex-shrink: 0;
+      }
+
+      .ci-name {
+        font-size: .92rem;
+        font-weight: 600;
+      }
+
+      .ci-sub {
+        font-size: .75rem;
+        color: var(--muted);
+      }
+
+      .ci-price {
+        font-size: .95rem;
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .promo-admin-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .promo-tier-row {
+        grid-template-columns: 84px minmax(0,1fr) 42px;
+      }
+    }
+
     @media(max-width: 540px) {
       .promo-modal { max-height: 95vh; border-radius: 14px 14px 0 0; }
       .promo-tiers-grid { grid-template-columns: 1fr 1fr; }
@@ -6189,6 +6279,7 @@
         <div class="config-section">
           <div class="config-section-title">🔥 Gestión de PROMOS</div>
           <div class="config-hint" style="margin-bottom:.9rem">Configurá las fragancias disponibles, activá o desactivá cada promo y guardá los cambios.</div>
+          <button class="btn-outline" style="border-radius:99px;padding:.55rem 1.4rem;font-size:.7rem;margin-bottom:1rem" onclick="PromoAdmin.openNew()">+ Nueva promo</button>
           <div id="promo-admin-list"></div>
           <button class="btn-dark" style="border-radius:99px;padding:.55rem 1.4rem;font-size:.7rem" onclick="PromoAdmin.save()">Guardar cambios en promos</button>
         </div>
@@ -6747,11 +6838,13 @@
         if (!overlay || !panel) return;
         overlay.classList.remove('peek');
         panel.classList.remove('peek');
+        panel.style.minHeight = '';
         overlay.classList.add('open');
         panel.classList.add('open');
         if (mode === 'peek' && isMobileCartMode()) {
           overlay.classList.add('peek');
           panel.classList.add('peek');
+          panel.style.minHeight = '55vh';
           document.body.style.overflow = '';
         } else {
           document.body.style.overflow = 'hidden';
@@ -6783,7 +6876,7 @@
           if (waBtn) waBtn.disabled = true;
           return;
         }
-        body.innerHTML = items.map(it => `<div class="cart-item"><div class="ci-thumb">${it.images?.[0] ? `<img src="${it.images[0]}" alt="${escapeHtml(it.name)}" style="width:100%;height:100%;object-fit:cover"/>` : it.emoji || '🌸'}</div><div class="ci-info"><div class="ci-name">${escapeHtml(it.name)}</div><div class="ci-sub">${escapeHtml(it.size || '35 ml · EDP')}</div><div class="ci-price">$${(it.price * it.qty).toLocaleString('es-AR')}</div><div class="qty-row"><button class="qty-btn" onclick="Cart.updateQty('${it.id}',-1)">−</button><span class="qty-val">${it.qty}</span><button class="qty-btn" onclick="Cart.updateQty('${it.id}',1)">+</button><button class="ci-rm" onclick="Cart.remove('${it.id}')">Eliminar</button></div></div></div>`).join('');
+        body.innerHTML = items.map(it => `<div class="cart-item" style="display:flex;gap:.75rem;align-items:flex-start;padding:.75rem 0;border-bottom:1px solid var(--border)"><div class="ci-thumb">${it.images?.[0] ? `<img src="${it.images[0]}" alt="${escapeHtml(it.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px"/>` : it.emoji || '🌸'}</div><div class="ci-info"><div class="ci-name">${escapeHtml(it.name)}</div><div class="ci-sub">${escapeHtml(it.size || '35 ml · EDP')}</div><div class="ci-price">$${(it.price * it.qty).toLocaleString('es-AR')}</div><div class="qty-row"><button class="qty-btn" onclick="Cart.updateQty('${it.id}',-1)">−</button><span class="qty-val">${it.qty}</span><button class="qty-btn" onclick="Cart.updateQty('${it.id}',1)">+</button><button class="ci-rm" onclick="Cart.remove('${it.id}')">Eliminar</button></div></div></div>`).join('');
         renderShippingUI();
         refreshTotals();
       }
@@ -7772,22 +7865,105 @@ const PromoModal = (() => {
 })();
 
 const PromoAdmin = (() => {
+  function parseFragrances(value) {
+    return String(value || '').split(',').map(f => f.trim()).filter(Boolean);
+  }
+
+  function normalizeTiers(rows) {
+    const tiers = (rows || []).map(row => ({
+      qty: Math.max(1, Number(row?.qty || 0)),
+      total: Math.max(0, Number(row?.total || 0))
+    })).filter(row => Number.isFinite(row.qty) && Number.isFinite(row.total));
+    return tiers.length ? tiers : [{ qty: 3, total: 0 }];
+  }
+
+  function readTiersFromDom(id) {
+    const box = document.getElementById(`promo-tiers-${id}`);
+    if (!box) return [{ qty: 3, total: 0 }];
+    const rows = Array.from(box.querySelectorAll('.promo-tier-row')).map(row => ({
+      qty: row.querySelector('[data-tier-qty]')?.value,
+      total: row.querySelector('[data-tier-total]')?.value
+    }));
+    return normalizeTiers(rows);
+  }
+
+  function renderTierRows(promo) {
+    const tiers = normalizeTiers(promo.tiers || []);
+    return tiers.map((tier, index) => `
+      <div class="promo-tier-row">
+        <div>
+          <label class="config-label">Cant.</label>
+          <input class="config-input" type="number" min="1" data-tier-qty value="${Number(tier.qty || 0)}" />
+        </div>
+        <div>
+          <label class="config-label">Precio total</label>
+          <input class="config-input" type="number" min="0" step="1" data-tier-total value="${Number(tier.total || 0)}" />
+        </div>
+        <button type="button" class="btn-outline" style="padding:.55rem 0;font-size:1rem;line-height:1;border-radius:10px" onclick="PromoAdmin.removeTier('${promo.id}', ${index})">×</button>
+      </div>`).join('');
+  }
+
+  function syncPromoDraft(id) {
+    const promo = PROMOS_DATA.find(item => item.id === id);
+    if (!promo) return null;
+    const name = document.getElementById(`promo-name-${id}`)?.value?.trim();
+    const emoji = document.getElementById(`promo-emoji-${id}`)?.value?.trim();
+    const note = document.getElementById(`promo-note-${id}`)?.value?.trim();
+    const frags = document.getElementById(`promo-frags-${id}`)?.value;
+    const active = document.getElementById(`promo-active-${id}`)?.checked;
+    if (name) promo.name = name;
+    if (emoji) promo.emoji = emoji;
+    promo.note = note || '';
+    if (typeof frags === 'string') promo.fragrances = parseFragrances(frags);
+    if (typeof active === 'boolean') promo.active = active;
+    promo.tiers = readTiersFromDom(id);
+    return promo;
+  }
+
   function render() {
     const list = document.getElementById('promo-admin-list');
     if (!list) return;
     list.innerHTML = PROMOS_DATA.map(promo => {
       const fragStr = (promo.fragrances || []).join(', ');
+      const note = promo.note || '';
       return `
         <div class="promo-admin-card">
           <div class="promo-admin-head">
-            <div style="font-weight:700;font-size:.85rem">${promo.emoji} ${escapeHtml(promo.name)}</div>
+            <div style="font-weight:700;font-size:.85rem">${escapeHtml(promo.emoji || '🔥')} ${escapeHtml(promo.name || 'Promo')}</div>
             <div class="toggle-row" style="margin:0">
               <label class="toggle"><input type="checkbox" id="promo-active-${promo.id}" ${promo.active !== false ? 'checked' : ''}/><span class="toggle-slider"></span></label>
               <span class="toggle-label">Promo activa</span>
             </div>
           </div>
+
+          <div class="promo-admin-grid">
+            <div>
+              <label class="config-label">Nombre de la promo</label>
+              <input class="config-input" type="text" id="promo-name-${promo.id}" value="${escapeHtml(promo.name || '')}" />
+            </div>
+            <div>
+              <label class="config-label">Emoji</label>
+              <input class="config-input" type="text" id="promo-emoji-${promo.id}" value="${escapeHtml(promo.emoji || '🔥')}" maxlength="4" />
+            </div>
+          </div>
+
+          <label class="config-label">Nota opcional</label>
+          <input class="config-input" type="text" id="promo-note-${promo.id}" value="${escapeHtml(note)}" style="margin-bottom:.85rem" />
+
           <label class="config-label">Fragancias disponibles</label>
-          <textarea class="config-textarea" id="promo-frags-${promo.id}" style="min-height:70px">${escapeHtml(fragStr)}</textarea>
+          <textarea class="config-textarea" id="promo-frags-${promo.id}" style="min-height:70px;margin-bottom:.85rem">${escapeHtml(fragStr)}</textarea>
+
+          <label class="config-label">Tiers</label>
+          <div class="promo-tiers-admin" id="promo-tiers-${promo.id}">
+            ${renderTierRows(promo)}
+          </div>
+          <div class="promo-tier-actions">
+            <button type="button" class="btn-outline" style="border-radius:10px;padding:.5rem .9rem;font-size:.78rem" onclick="PromoAdmin.addTier('${promo.id}')">+ Agregar tier</button>
+          </div>
+
+          <div style="display:flex;justify-content:flex-end;margin-top:1rem">
+            <button type="button" class="btn-outline promo-delete-btn" style="border-radius:99px;padding:.55rem 1rem;font-size:.72rem" onclick="PromoAdmin.remove('${promo.id}')">Eliminar promo</button>
+          </div>
         </div>`;
     }).join('');
   }
@@ -7795,29 +7971,86 @@ const PromoAdmin = (() => {
   function save() {
     const overrides = {};
     PROMOS_DATA.forEach(promo => {
-      const el = document.getElementById(`promo-frags-${promo.id}`);
-      const active = document.getElementById(`promo-active-${promo.id}`);
-      const frags = (el?.value || '').split(',').map(f => f.trim()).filter(Boolean);
-      promo.fragrances = frags.length ? frags : promo.fragrances;
-      promo.active = !!active?.checked;
-      overrides[promo.id] = { fragrances: promo.fragrances, active: promo.active };
+      const name = document.getElementById(`promo-name-${promo.id}`)?.value?.trim() || 'Nueva promo';
+      const emoji = document.getElementById(`promo-emoji-${promo.id}`)?.value?.trim() || '🔥';
+      const note = document.getElementById(`promo-note-${promo.id}`)?.value?.trim() || '';
+      const frags = parseFragrances(document.getElementById(`promo-frags-${promo.id}`)?.value || '');
+      const active = !!document.getElementById(`promo-active-${promo.id}`)?.checked;
+      const tiers = readTiersFromDom(promo.id);
+      promo.name = name;
+      promo.emoji = emoji;
+      promo.note = note;
+      promo.fragrances = frags;
+      promo.active = active;
+      promo.tiers = tiers;
+      overrides[promo.id] = { name, emoji, fragrances: frags, active, tiers, note };
     });
     localStorage.setItem('aura_promo_overrides', JSON.stringify(overrides));
     renderProducts();
     showToast('Promos guardadas ✓');
   }
 
+  function openNew() {
+    PROMOS_DATA.push({
+      id: 'promo-' + Date.now(),
+      name: 'Nueva promo',
+      emoji: '🔥',
+      active: false,
+      fragrances: [],
+      tiers: [{ qty: 3, total: 0 }],
+      note: ''
+    });
+    render();
+  }
+
+  function remove(id) {
+    const promo = PROMOS_DATA.find(item => item.id === id);
+    if (!promo) return;
+    if (!window.confirm(`¿Eliminar la promo "${promo.name}"?`)) return;
+    const index = PROMOS_DATA.findIndex(item => item.id === id);
+    if (index >= 0) PROMOS_DATA.splice(index, 1);
+    save();
+    render();
+  }
+
+  function addTier(id) {
+    const promo = syncPromoDraft(id);
+    if (!promo) return;
+    promo.tiers.push({ qty: 1, total: 0 });
+    render();
+  }
+
+  function removeTier(id, index) {
+    const promo = syncPromoDraft(id);
+    if (!promo) return;
+    const tiers = normalizeTiers(promo.tiers || []);
+    if (tiers.length <= 1) {
+      promo.tiers = [{ qty: 3, total: 0 }];
+      render();
+      return;
+    }
+    tiers.splice(index, 1);
+    promo.tiers = normalizeTiers(tiers);
+    render();
+  }
+
   function loadOverrides() {
     try {
       const overrides = JSON.parse(localStorage.getItem('aura_promo_overrides') || '{}');
       PROMOS_DATA.forEach(promo => {
-        if (Array.isArray(overrides[promo.id]?.fragrances) && overrides[promo.id].fragrances.length) promo.fragrances = overrides[promo.id].fragrances;
-        if (typeof overrides[promo.id]?.active === 'boolean') promo.active = overrides[promo.id].active;
+        const override = overrides[promo.id];
+        if (!override) return;
+        if (typeof override.name === 'string' && override.name.trim()) promo.name = override.name.trim();
+        if (typeof override.emoji === 'string' && override.emoji.trim()) promo.emoji = override.emoji.trim();
+        if (Array.isArray(override.fragrances)) promo.fragrances = override.fragrances.filter(Boolean);
+        if (typeof override.active === 'boolean') promo.active = override.active;
+        if (Array.isArray(override.tiers)) promo.tiers = normalizeTiers(override.tiers);
+        if (typeof override.note === 'string') promo.note = override.note;
       });
     } catch (e) {}
   }
 
-  return { render, save, loadOverrides };
+  return { render, save, loadOverrides, openNew, remove, addTier, removeTier };
 })();
 
 const SugCenter = (() => {
