@@ -5665,9 +5665,20 @@
     }
 
     @media(max-width:767px) {
+      .cart-panel {
+        height: 100dvh;
+        max-height: 100dvh;
+        min-height: 100dvh;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        touch-action: pan-y;
+      }
+
       .cart-panel.peek {
-        max-height: 72vh;
-        min-height: 55vh;
+        max-height: 100dvh;
+        min-height: 100dvh;
         transform: translateY(100%);
       }
 
@@ -5676,15 +5687,20 @@
         overflow: hidden;
       }
 
+      .cart-body {
+        flex: 0 0 auto;
+        min-height: auto;
+        overflow: visible;
+        padding-bottom: 0;
+      }
+
       #cart-panel.peek #cart-body,
       .cart-panel.peek #cart-body,
       .cart-panel.peek .cart-body {
-        flex: 1 1 auto;
-        min-height: 0;
-        overflow-y: auto;
-        overscroll-behavior: contain;
-        -webkit-overflow-scrolling: touch;
-        max-height: 42vh;
+        flex: 0 0 auto;
+        min-height: auto;
+        overflow: visible;
+        max-height: none;
       }
 
       .cart-ftr {
