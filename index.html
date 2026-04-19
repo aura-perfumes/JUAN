@@ -12047,6 +12047,158 @@ const SugCenter = (() => {
     })();
   </script>
 
+
+  <script>
+    (function(){
+      function isConfirmed(status){
+        return String(status || '').trim().toLowerCase() === 'confirmado';
+      }
+      function asNum(v){
+        if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
+        const n = Number(String(v ?? '').replace(/\./g,'').replace(/,/g,'.').replace(/[^0-9.-]/g,''));
+        return Number.isFinite(n) ? n : 0;
+      }
+      function normCompact(v){
+        return String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+      }
+      function resolveProductForCartItem(item){
+        if (!item || !Array.isArray(window.PRODUCTS)) return null;
+        let found = PRODUCTS.find(p => p && p.id === item.id);
+        if (found) return found;
+        const itemName = normCompact(item.name);
+        const itemSize = normCompact(item.size);
+        found = PRODUCTS.find(p => {
+          if (!p) return false;
+          const sameName = normCompact(p.name) === itemName;
+          if (!sameName) return false;
+          if (!itemSize) return true;
+          const pSize = normCompact(p.size);
+          return pSize.includes(itemSize) || itemSize.includes(pSize);
+        });
+        return found || null;
+      }
+      function applyConfirmedOrderStock(order){
+        if (!order || !isConfirmed(order.status) || order.stockApplied || !Array.isArray(order.items)) return false;
+        let changed = false;
+        order.items.forEach(item => {
+          const product = resolveProductForCartItem(item);
+          if (!product) return;
+          const qty = Math.max(0, Math.round(asNum(item.qty || 0)));
+          const current = Math.max(0, Math.round(asNum(product.stock || 0)));
+          const next = Math.max(0, current - qty);
+          if (next !== current) {
+            product.stock = next;
+            changed = true;
+          }
+        });
+        if (changed) {
+          order.stockApplied = true;
+          order.stockAppliedAt = new Date().toISOString();
+        }
+        return changed;
+      }
+      function syncConfirmedOrders(){
+        if (!Array.isArray(window.ORDERS)) return;
+        let ordersChanged = false;
+        let productsChanged = false;
+        if (window.Planilla && typeof Planilla.init === 'function' && !Planilla.initDone) {
+          try { Planilla.init(); } catch(e) {}
+        }
+        ORDERS.forEach(order => {
+          if (!order || !order.id || !isConfirmed(order.status)) return;
+          if (window.Planilla && Planilla.initDone && !order.planillaClientSync) {
+            Planilla.registerOrderToClientes(order, false);
+            ordersChanged = true;
+          }
+          if (!order.stockApplied) {
+            if (applyConfirmedOrderStock(order)) productsChanged = true;
+            if (order.stockApplied) ordersChanged = true;
+          }
+        });
+        if (productsChanged) {
+          localStorage.setItem('aura_products', JSON.stringify(window.PRODUCTS || []));
+          if (window.Planilla && Planilla.initDone && typeof Planilla.syncInventoryFromProducts === 'function') {
+            Planilla.syncInventoryFromProducts();
+          }
+          if (window.Dash) {
+            Dash.renderInventory?.();
+            Dash.updatePanelKPIs?.();
+            Dash.initAnalytics?.();
+          }
+          if (typeof window.renderProducts === 'function') window.renderProducts();
+        }
+        if (ordersChanged) {
+          localStorage.setItem('aura_orders', JSON.stringify(window.ORDERS || []));
+          if (window.Dash) {
+            Dash.renderPedidos?.();
+            Dash.renderClientes?.();
+            Dash.updatePanelKPIs?.();
+            Dash.initAnalytics?.();
+          }
+        }
+      }
+
+      function installOverrides(){
+        if (window.Planilla && !Planilla.__confirmadosPatchApplied) {
+          const originalRegister = typeof Planilla.registerOrderToClientes === 'function'
+            ? Planilla.registerOrderToClientes.bind(Planilla)
+            : null;
+          if (originalRegister) {
+            Planilla.registerOrderToClientes = function(order, manualOnly){
+              if (!manualOnly && !isConfirmed(order && order.status)) return false;
+              return originalRegister(order, manualOnly);
+            };
+          }
+          Planilla.syncPendingOrders = function(){
+            if (!Array.isArray(window.ORDERS)) return false;
+            let changed = false;
+            ORDERS.forEach(order => {
+              if (isConfirmed(order && order.status) && !order.planillaClientSync) {
+                this.registerOrderToClientes(order, false);
+                changed = true;
+              }
+            });
+            return changed;
+          };
+          Planilla.__confirmadosPatchApplied = true;
+        }
+
+        window.saveOrdersLS = function(){
+          localStorage.setItem('aura_orders', JSON.stringify(window.ORDERS || []));
+          syncConfirmedOrders();
+        };
+
+        const originalSetOrderStatus = window.Dash && Dash.setOrderStatus;
+        if (window.Dash && typeof originalSetOrderStatus === 'function' && !Dash.__confirmadosStatusPatchApplied) {
+          Dash.setOrderStatus = function(id, status){
+            const out = originalSetOrderStatus.apply(this, arguments);
+            syncConfirmedOrders();
+            return out;
+          };
+          Dash.__confirmadosStatusPatchApplied = true;
+        }
+
+        const originalSaveOrderEdit = window.Dash && Dash.saveOrderEdit;
+        if (window.Dash && typeof originalSaveOrderEdit === 'function' && !Dash.__confirmadosEditPatchApplied) {
+          Dash.saveOrderEdit = function(){
+            const out = originalSaveOrderEdit.apply(this, arguments);
+            syncConfirmedOrders();
+            return out;
+          };
+          Dash.__confirmadosEditPatchApplied = true;
+        }
+
+        syncConfirmedOrders();
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', installOverrides, { once:true });
+      } else {
+        installOverrides();
+      }
+    })();
+  </script>
+
 </body>
 
 </html>
