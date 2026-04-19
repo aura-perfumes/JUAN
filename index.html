@@ -11786,6 +11786,267 @@ const SugCenter = (() => {
     })();
   </script>
 
+
+  <script>
+    (function(){
+      const ORDER_STOCK_MARKER_KEY = 'aura_order_stock_processed_v2';
+      let saveOrdersReentry = false;
+
+      function asNum(v){
+        if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
+        const n = Number(String(v ?? '').replace(/\./g,'').replace(/,/g,'.').replace(/[^0-9.-]/g,''));
+        return Number.isFinite(n) ? n : 0;
+      }
+      function normCompact(v){
+        return String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+      }
+      function loadProcessedOrderIds(){
+        try { return new Set(JSON.parse(localStorage.getItem(ORDER_STOCK_MARKER_KEY) || '[]')); }
+        catch(e){ return new Set(); }
+      }
+      function saveProcessedOrderIds(set){
+        localStorage.setItem(ORDER_STOCK_MARKER_KEY, JSON.stringify(Array.from(set)));
+      }
+      function seedProcessedOrdersOnce(){
+        if (localStorage.getItem(ORDER_STOCK_MARKER_KEY)) return;
+        const ids = Array.isArray(window.ORDERS) ? ORDERS.map(o => o && o.id).filter(Boolean) : [];
+        localStorage.setItem(ORDER_STOCK_MARKER_KEY, JSON.stringify(ids));
+      }
+      function resolveProductForCartItem(item){
+        if (!item) return null;
+        if (Array.isArray(window.PRODUCTS)) {
+          let found = PRODUCTS.find(p => p && p.id === item.id);
+          if (found) return found;
+          const itemName = normCompact(item.name);
+          const itemSize = normCompact(item.size);
+          found = PRODUCTS.find(p => {
+            if (!p) return false;
+            const nameOk = normCompact(p.name) === itemName;
+            if (!nameOk) return false;
+            if (!itemSize) return true;
+            return normCompact(p.size).includes(itemSize) || itemSize.includes(normCompact(p.size));
+          });
+          if (found) return found;
+        }
+        return null;
+      }
+      function getCartStockIssues(items){
+        const issues = [];
+        (Array.isArray(items) ? items : []).forEach(item => {
+          const product = resolveProductForCartItem(item);
+          if (!product) return;
+          const wanted = Math.max(0, Math.round(asNum(item.qty || 0)));
+          const available = Math.max(0, Math.round(asNum(product.stock || 0)));
+          if (wanted > available) {
+            issues.push({ name: product.name || item.name || 'Producto', wanted, available });
+          }
+        });
+        return issues;
+      }
+      function applyOrderStock(order){
+        if (!order || !Array.isArray(order.items) || !Array.isArray(window.PRODUCTS)) return false;
+        let changed = false;
+        order.items.forEach(item => {
+          const product = resolveProductForCartItem(item);
+          if (!product) return;
+          const qty = Math.max(0, Math.round(asNum(item.qty || 0)));
+          const currentStock = Math.max(0, Math.round(asNum(product.stock || 0)));
+          const nextStock = Math.max(0, currentStock - qty);
+          if (nextStock !== currentStock) {
+            product.stock = nextStock;
+            changed = true;
+          }
+        });
+        if (changed) {
+          order.stockApplied = true;
+          order.stockAppliedAt = new Date().toISOString();
+        }
+        return changed;
+      }
+      function syncNewOrdersToClientesAndStock(){
+        if (saveOrdersReentry || !Array.isArray(window.ORDERS)) return;
+        const processed = loadProcessedOrderIds();
+        let ordersChanged = false;
+        let productsChanged = false;
+        ORDERS.forEach(order => {
+          if (!order || !order.id) return;
+          if (window.Planilla && Planilla.initDone && !order.planillaClientSync) {
+            Planilla.registerOrderToClientes(order, false);
+            ordersChanged = true;
+          }
+          if (!processed.has(order.id)) {
+            if (applyOrderStock(order)) productsChanged = true;
+            processed.add(order.id);
+            ordersChanged = true;
+          }
+        });
+        saveProcessedOrderIds(processed);
+        if (productsChanged && typeof window.saveProductsLS === 'function') {
+          window.saveProductsLS();
+          if (window.Dash) {
+            Dash.renderInventory?.();
+            Dash.updatePanelKPIs?.();
+            Dash.initAnalytics?.();
+          }
+          if (typeof window.renderProducts === 'function') window.renderProducts();
+        }
+        if (ordersChanged) {
+          saveOrdersReentry = true;
+          try {
+            localStorage.setItem('aura_orders', JSON.stringify(ORDERS));
+          } finally {
+            saveOrdersReentry = false;
+          }
+        }
+      }
+
+      const originalGetAssignedPromoIds = window.getAssignedPromoIds;
+      window.getAssignedPromoIds = function(product){
+        if (!product) return [];
+        const activePromos = typeof window.getActivePromos === 'function' ? getActivePromos() : [];
+        const activeIds = new Set(activePromos.map(p => p.id));
+        const manual = Array.isArray(product.promoAssignments)
+          ? [...new Set(product.promoAssignments)].filter(id => activeIds.has(id))
+          : [];
+        const haystack = normCompact(`${product.name || ''} ${product.size || ''}`);
+        const autoMatched = activePromos.filter(promo => {
+          const sizeMatch = normCompact(promo && promo.sizeMatch);
+          if (!sizeMatch) return false;
+          return haystack.includes(sizeMatch);
+        }).map(p => p.id);
+        const out = [...new Set([...manual, ...autoMatched])];
+        return out.length ? out : (typeof originalGetAssignedPromoIds === 'function' ? originalGetAssignedPromoIds(product) : []);
+      };
+
+      function buildPromoBasePrice(promo){
+        const tiers = Array.isArray(promo && promo.tiers) ? promo.tiers : [];
+        const one = tiers.find(t => asNum(t.qty) === 1);
+        if (one) return Math.round(asNum(one.total || one.unitPrice));
+        const first = tiers[0];
+        if (!first) return 0;
+        const firstQty = Math.max(1, Math.round(asNum(first.qty || 1)));
+        return Math.round(asNum(first.total || 0) / firstQty) || Math.round(asNum(first.unitPrice || 0));
+      }
+      function getPromoPricing(promo, qty){
+        qty = Math.max(0, Math.round(asNum(qty)));
+        if (!promo || !qty) return null;
+        const baseUnit = buildPromoBasePrice(promo);
+        if (!baseUnit) return null;
+        const tiers = (Array.isArray(promo.tiers) ? promo.tiers : [])
+          .map(t => ({
+            qty: Math.max(1, Math.round(asNum(t.qty))),
+            total: Math.round(asNum(t.total)),
+            unitPrice: Math.round(asNum(t.unitPrice)),
+            label: t.label || ''
+          }))
+          .filter(t => t.qty > 0 && t.total >= 0);
+        if (!tiers.some(t => t.qty === 1)) {
+          tiers.unshift({ qty: 1, total: baseUnit, unitPrice: baseUnit, label: `1x $${baseUnit.toLocaleString('es-AR')}` });
+        }
+        const dp = Array(qty + 1).fill(Infinity);
+        const combo = Array(qty + 1).fill(null);
+        dp[0] = 0;
+        combo[0] = [];
+        for (let i = 1; i <= qty; i++) {
+          for (const tier of tiers) {
+            if (i >= tier.qty && Number.isFinite(dp[i - tier.qty])) {
+              const candidate = dp[i - tier.qty] + tier.total;
+              if (candidate < dp[i]) {
+                dp[i] = candidate;
+                combo[i] = combo[i - tier.qty].concat([tier]);
+              }
+            }
+          }
+        }
+        if (!Number.isFinite(dp[qty])) return null;
+        const fullPrice = baseUnit * qty;
+        const bestTotal = Math.round(dp[qty]);
+        const saved = Math.max(0, fullPrice - bestTotal);
+        const breakdown = combo[qty] || [];
+        const representative = breakdown.slice().sort((a,b) => b.qty - a.qty)[0] || { qty, total: bestTotal, unitPrice: Math.round(bestTotal / qty), label: `${qty}x` };
+        return {
+          tier: { qty, total: bestTotal, unitPrice: Math.round(bestTotal / qty), label: representative.label || `${qty}x` },
+          saved,
+          breakdown,
+          fullPrice,
+          bestTotal,
+          baseUnit
+        };
+      }
+      window.getPromoTier = function(promo, qty){
+        const pricing = getPromoPricing(promo, qty);
+        return pricing ? pricing.tier : null;
+      };
+      window.getPromoDiscount = function(promo, qty){
+        const pricing = getPromoPricing(promo, qty);
+        if (!pricing || pricing.saved <= 0) return null;
+        return pricing;
+      };
+
+      const originalRefreshTotalsHint = window.refreshTotals;
+      if (window.Cart) {
+        const originalCartAddItem = Cart.addItem;
+        if (typeof originalCartAddItem === 'function') {
+          Cart.addItem = function(product){
+            const snapshot = Array.isArray(Cart.items()) ? Cart.items() : [];
+            const existing = snapshot.find(i => i.id === product.id);
+            const wanted = Math.max(0, Math.round(asNum((existing ? existing.qty : 0) + 1)));
+            const realProduct = resolveProductForCartItem(product) || product;
+            const available = Math.max(0, Math.round(asNum(realProduct.stock || 0)));
+            if (available >= 0 && wanted > available) {
+              if (typeof window.showToast === 'function') showToast(`Stock insuficiente para ${realProduct.name || product.name}. Disponible: ${available}.`, true);
+              return;
+            }
+            return originalCartAddItem.apply(this, arguments);
+          };
+        }
+        const originalCartUpdateQty = Cart.updateQty;
+        if (typeof originalCartUpdateQty === 'function') {
+          Cart.updateQty = function(id, delta){
+            const item = (Array.isArray(Cart.items()) ? Cart.items() : []).find(i => i.id === id);
+            if (item && delta > 0) {
+              const product = resolveProductForCartItem(item);
+              const available = Math.max(0, Math.round(asNum(product && product.stock)));
+              const wanted = Math.max(0, Math.round(asNum(item.qty) + asNum(delta)));
+              if (product && wanted > available) {
+                if (typeof window.showToast === 'function') showToast(`Stock insuficiente para ${product.name}. Disponible: ${available}.`, true);
+                return;
+              }
+            }
+            return originalCartUpdateQty.apply(this, arguments);
+          };
+        }
+        const originalCartConfirmWhatsApp = Cart.confirmWhatsApp;
+        if (typeof originalCartConfirmWhatsApp === 'function') {
+          Cart.confirmWhatsApp = function(){
+            const issues = getCartStockIssues(Cart.items());
+            if (issues.length) {
+              const first = issues[0];
+              if (typeof window.showToast === 'function') showToast(`Stock insuficiente para ${first.name}. Pediste ${first.wanted} y hay ${first.available}.`, true);
+              return;
+            }
+            const beforeIds = new Set((Array.isArray(window.ORDERS) ? ORDERS : []).map(o => o && o.id).filter(Boolean));
+            const result = originalCartConfirmWhatsApp.apply(this, arguments);
+            const newOrders = (Array.isArray(window.ORDERS) ? ORDERS : []).filter(o => o && o.id && !beforeIds.has(o.id));
+            if (newOrders.length) syncNewOrdersToClientesAndStock();
+            return result;
+          };
+        }
+      }
+
+      const previousSaveOrdersLS = window.saveOrdersLS;
+      window.saveOrdersLS = function(){
+        const result = typeof previousSaveOrdersLS === 'function' ? previousSaveOrdersLS.apply(this, arguments) : undefined;
+        syncNewOrdersToClientesAndStock();
+        return result;
+      };
+
+      document.addEventListener('DOMContentLoaded', function(){
+        seedProcessedOrdersOnce();
+      });
+    })();
+  </script>
+
 </body>
 
 </html>
