@@ -12187,6 +12187,55 @@ const SugCenter = (() => {
               return originalRegister(order, manualOnly);
             };
           }
+          Planilla.buildClientesRowsFromPedidos = function(){
+            const rows = [];
+            const confirmedOrders = Array.isArray(window.ORDERS)
+              ? ORDERS.filter(order => order && isConfirmed(order.status))
+              : [];
+            confirmedOrders.forEach(order => {
+              const customerName = order.customerName || order.name || 'Cliente sin nombre';
+              const items = Array.isArray(order.items) && order.items.length
+                ? order.items
+                : [{ name: order.product || 'Compra', size: '', qty: 1, price: asNum(order.total) }];
+              const total = Math.round(asNum(order.total));
+              const dateValue = order.date || order.createdAt || new Date().toISOString().slice(0,10);
+              const serial = (window.dateToSerial ? dateToSerial(dateValue) : dateValue);
+              items.forEach((item, idx) => {
+                const qty = Math.max(1, Math.round(asNum(item && item.qty || 1)));
+                const labelQty = qty > 1 ? `${qty}x ` : '';
+                const size = String(item && item.size || '').trim();
+                const productName = String(item && item.name || '').trim() || 'Producto';
+                const compra = `${labelQty}${productName}${size ? ' ' + size : ''}`.trim();
+                const unitPrice = Math.round(asNum(item && (item.finalUnitPrice ?? item.price)));
+                const profile = item && (item.profile || item.olfactoryProfile || item.perfil || item.family || item.familia) || '';
+                if (idx === 0) {
+                  rows.push([customerName, serial, compra, unitPrice, profile, '', total, order.notes || '']);
+                } else {
+                  rows.push(['', '', compra, unitPrice, profile, '', '', '']);
+                }
+              });
+              rows.push(['','','','','','','','']);
+            });
+            while (rows.length && !rows[rows.length - 1].some(v => String(v || '').trim() !== '')) rows.pop();
+            return rows;
+          };
+          Planilla.refreshFromOrders = function(showFeedback = true){
+            const clientes = this.sheets.CLIENTES || this.loadSheet('CLIENTES');
+            this.sheets.CLIENTES = clientes;
+            clientes.rows = this.buildClientesRowsFromPedidos();
+            (Array.isArray(window.ORDERS) ? ORDERS : []).forEach(order => {
+              if (order && isConfirmed(order.status)) order.planillaClientSync = true;
+            });
+            this.saveSheet('CLIENTES');
+            this.syncInventoryFromProducts?.();
+            localStorage.setItem('aura_orders', JSON.stringify(window.ORDERS || []));
+            this.render();
+            if (showFeedback) {
+              if (typeof showToast === 'function') showToast('Planilla actualizada desde Pedidos.');
+              else alert('Planilla actualizada desde Pedidos.');
+            }
+            return true;
+          };
           Planilla.syncPendingOrders = function(){
             if (!Array.isArray(window.ORDERS)) return false;
             let changed = false;
