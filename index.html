@@ -6813,6 +6813,7 @@
               <button class="btn-outline" type="button" onclick="Planilla.addRow()">+ Fila</button>
               <button class="btn-outline" type="button" onclick="Planilla.openClientModal()">+ Cliente</button>
               <button class="btn-outline" type="button" onclick="Planilla.removeSelectedRow()">− Fila</button>
+              <button class="btn-outline" type="button" onclick="Planilla.refreshFromOrders()">Actualizar planilla</button>
               <button class="btn-outline" type="button" onclick="Planilla.exportCSV()">Exportar CSV</button>
               <button class="btn-dark" type="button" onclick="Planilla.resetSheet()">Restablecer hoja</button>
               <span class="planilla-meta" id="planilla-meta">0 filas × 0 columnas</span>
@@ -11352,6 +11353,17 @@ const SugCenter = (() => {
             const ref = right.querySelector('.btn-outline');
             if (ref && ref.nextSibling) ref.insertAdjacentElement('afterend', btn); else right.prepend(btn);
           }
+          if (right && !right.querySelector('[data-planilla-refresh]')) {
+            const btn = document.createElement('button');
+            btn.className = 'btn-outline';
+            btn.type = 'button';
+            btn.dataset.planillaRefresh = '1';
+            btn.textContent = 'Actualizar planilla';
+            btn.onclick = () => this.refreshFromOrders();
+            const exportBtn = right.querySelector('button[onclick*="Planilla.exportCSV"]');
+            if (exportBtn) exportBtn.insertAdjacentElement('beforebegin', btn);
+            else right.appendChild(btn);
+          }
         },
         init(){
           this.cleanupLegacyStorage();
@@ -11676,6 +11688,32 @@ const SugCenter = (() => {
         syncProductsFromInventoryAll(){
           const sheet = this.sheets.INVENTARIO || this.loadSheet('INVENTARIO');
           sheet.rows.forEach(row => this.syncProductsFromInventoryRow(row));
+        },
+        isConfirmedStatus(status){
+          const raw = String(status || '').trim().toLowerCase();
+          return raw === 'confirmado' || raw === 'confirmada' || raw.includes('confirmad');
+        },
+        refreshFromOrders(showFeedback = true){
+          let changed = false;
+          if (Array.isArray(window.ORDERS)) {
+            ORDERS.forEach(order => {
+              if (this.isConfirmedStatus(order && order.status) && !order.planillaClientSync) {
+                this.registerOrderToClientes(order, false);
+                changed = true;
+              }
+            });
+          }
+          this.syncInventoryFromProducts();
+          if (changed) {
+            if (typeof window.saveOrdersLS === 'function') window.saveOrdersLS();
+            else localStorage.setItem('aura_orders', JSON.stringify(window.ORDERS || []));
+          }
+          this.render();
+          if (showFeedback) {
+            if (typeof showToast === 'function') showToast(changed ? 'Planilla actualizada.' : 'Planilla al día.');
+            else alert(changed ? 'Planilla actualizada.' : 'Planilla al día.');
+          }
+          return changed;
         }
       };
 
@@ -12195,389 +12233,6 @@ const SugCenter = (() => {
         document.addEventListener('DOMContentLoaded', installOverrides, { once:true });
       } else {
         installOverrides();
-      }
-    })();
-  </script>
-
-
-  <script>
-    (function(){
-      const SAFE_SAVE_ORDERS_KEY = 'aura_orders';
-
-      function asNum(v){
-        if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
-        const n = Number(String(v ?? '').replace(/\./g,'').replace(/,/g,'.').replace(/[^0-9.-]/g,''));
-        return Number.isFinite(n) ? n : 0;
-      }
-      function norm(v){
-        return String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
-      }
-      function isConfirmed(status){
-        return norm(status) === 'confirmado';
-      }
-      function formatDateDDMMYYYY(value){
-        const d = value ? new Date(value) : new Date();
-        if (Number.isNaN(d.getTime())) return new Date().toLocaleDateString('es-AR');
-        return d.toLocaleDateString('es-AR');
-      }
-      function resolveProduct(item){
-        if (!item || !Array.isArray(window.PRODUCTS)) return null;
-        let found = PRODUCTS.find(p => p && p.id === item.id);
-        if (found) return found;
-        const itemName = norm(item.name);
-        const itemSize = norm(item.size);
-        found = PRODUCTS.find(p => {
-          if (!p) return false;
-          const nameOk = norm(p.name) === itemName;
-          if (!nameOk) return false;
-          if (!itemSize) return true;
-          const pSize = norm(p.size);
-          return pSize.includes(itemSize) || itemSize.includes(pSize);
-        });
-        return found || null;
-      }
-      function getOrderStockWarnings(order){
-        const warnings = [];
-        const items = Array.isArray(order && order.items) ? order.items : [];
-        items.forEach(item => {
-          const product = resolveProduct(item);
-          if (!product) return;
-          const wanted = Math.max(0, Math.round(asNum(item.qty || 0)));
-          const available = Math.max(0, Math.round(asNum(product.stock || 0)));
-          if (wanted > available) warnings.push({ product, item, wanted, available });
-        });
-        return warnings;
-      }
-      function allocateDiscountedCartItems(cartItems){
-        const source = Array.isArray(cartItems) ? cartItems.map(item => ({
-          id: item.id,
-          name: item.name,
-          qty: Math.max(1, Math.round(asNum(item.qty || 1))),
-          size: item.size || '35 ml · EDP',
-          price: Math.max(0, Math.round(asNum(item.price || 0))),
-          profile: item.profile || item.perfil || ''
-        })) : [];
-        const lines = source.map(item => ({
-          ...item,
-          baseLineTotal: Math.max(0, Math.round(item.price * item.qty)),
-          lineDiscount: 0,
-          finalLineTotal: Math.max(0, Math.round(item.price * item.qty)),
-          finalUnitPrice: Math.max(0, Math.round(item.price))
-        }));
-        const promos = typeof window.getActivePromos === 'function' ? getActivePromos() : [];
-        promos.forEach(promo => {
-          const indexes = [];
-          let promoBase = 0;
-          let qty = 0;
-          lines.forEach((line, idx) => {
-            const product = resolveProduct(line) || (Array.isArray(window.PRODUCTS) ? PRODUCTS.find(p => p.id === line.id) : null);
-            const ids = typeof window.getAssignedPromoIds === 'function' ? getAssignedPromoIds(product) : [];
-            if (Array.isArray(ids) && ids.includes(promo.id)) {
-              indexes.push(idx);
-              promoBase += line.baseLineTotal;
-              qty += line.qty;
-            }
-          });
-          if (!indexes.length || !qty || typeof window.getPromoDiscount !== 'function') return;
-          const discount = getPromoDiscount(promo, qty);
-          const saved = Math.max(0, Math.round(asNum(discount && discount.saved)));
-          if (!saved || !promoBase) return;
-          let remaining = saved;
-          indexes.forEach((idx, pos) => {
-            const line = lines[idx];
-            let piece = pos === indexes.length - 1 ? remaining : Math.round(saved * (line.baseLineTotal / promoBase));
-            piece = Math.max(0, Math.min(piece, remaining, line.baseLineTotal - line.lineDiscount));
-            line.lineDiscount += piece;
-            remaining -= piece;
-          });
-        });
-        lines.forEach(line => {
-          line.finalLineTotal = Math.max(0, line.baseLineTotal - line.lineDiscount);
-          if (line.qty > 0) {
-            line.finalUnitPrice = Math.max(0, Math.round(line.finalLineTotal / line.qty));
-          }
-        });
-        return lines;
-      }
-      function applyDiscountedPricingToOrder(order, cartSnapshot){
-        if (!order || !Array.isArray(order.items) || !Array.isArray(cartSnapshot)) return;
-        const priced = allocateDiscountedCartItems(cartSnapshot);
-        order.items = order.items.map(item => {
-          const matchIdx = priced.findIndex(line => line && !line.__used && line.id === item.id && norm(line.name) === norm(item.name) && norm(line.size) === norm(item.size) && Math.round(asNum(line.qty)) === Math.round(asNum(item.qty)));
-          const match = matchIdx >= 0 ? priced[matchIdx] : null;
-          if (match) match.__used = true;
-          return Object.assign({}, item, {
-            price: match ? match.finalUnitPrice : Math.round(asNum(item.price || 0)),
-            basePrice: Math.round(asNum(item.price || 0)),
-            lineTotal: match ? match.finalLineTotal : Math.round(asNum(item.price || 0)) * Math.max(1, Math.round(asNum(item.qty || 1))),
-            lineDiscount: match ? match.lineDiscount : 0
-          });
-        });
-      }
-      function patchCartConfirm(){
-        if (!window.Cart || Cart.__auraFinalPatchConfirm) return;
-        const originalConfirm = Cart.confirmWhatsApp;
-        if (typeof originalConfirm !== 'function') return;
-        Cart.confirmWhatsApp = function(){
-          const snapshot = (typeof Cart.items === 'function' ? Cart.items() : []).map(item => Object.assign({}, item));
-          const before = new Set((Array.isArray(window.ORDERS) ? ORDERS : []).map(o => o && o.id).filter(Boolean));
-          const result = originalConfirm.apply(this, arguments);
-          const created = (Array.isArray(window.ORDERS) ? ORDERS : []).find(o => o && o.id && !before.has(o.id));
-          if (created) {
-            applyDiscountedPricingToOrder(created, snapshot);
-            created.discountTotal = Math.max(0, Math.round(asNum(created.subtotal) + asNum(created.delivery) - asNum(created.total)));
-            localStorage.setItem(SAFE_SAVE_ORDERS_KEY, JSON.stringify(window.ORDERS || []));
-          }
-          return result;
-        };
-        Cart.__auraFinalPatchConfirm = true;
-      }
-      function ensurePlanillaStructure(){
-        if (!window.Planilla) return;
-        const sheetStock = Planilla.sheets && (Planilla.sheets.STOCK || Planilla.sheets.INVENTARIO || (typeof Planilla.loadSheet === 'function' ? Planilla.loadSheet('STOCK') : null));
-        const sheetVentas = Planilla.sheets && (Planilla.sheets.VENTAS || (window.PLANILLA_BOOTSTRAP && PLANILLA_BOOTSTRAP.VENTAS) || { columns:['Categoría','Perfume'], rows:[] });
-        if (!Planilla.sheets) Planilla.sheets = {};
-        if (sheetStock) Planilla.sheets.STOCK = sheetStock;
-        if (sheetVentas) Planilla.sheets.VENTAS = sheetVentas;
-        delete Planilla.sheets.INVENTARIO;
-        Planilla.order = ['CLIENTES','STOCK','VENTAS'];
-        if (!Planilla.widths) Planilla.widths = {};
-        if (Planilla.widths.INVENTARIO && !Planilla.widths.STOCK) Planilla.widths.STOCK = Planilla.widths.INVENTARIO;
-        Planilla.widths.STOCK = Planilla.widths.STOCK || [220,130,150,90,120];
-        Planilla.widths.VENTAS = Planilla.widths.VENTAS || [220,240];
-        const originalCurrent = typeof Planilla.current === 'function' ? Planilla.current.bind(Planilla) : null;
-        if (!Planilla.__auraCurrentPatched) {
-          Planilla.current = function(){
-            if (this.activeSheet === 'INVENTARIO') this.activeSheet = 'STOCK';
-            if (this.sheets && this.sheets.INVENTARIO && !this.sheets.STOCK) this.sheets.STOCK = this.sheets.INVENTARIO;
-            return this.sheets[this.activeSheet] || (originalCurrent ? originalCurrent() : null);
-          };
-          Planilla.__auraCurrentPatched = true;
-        }
-        Planilla.getStorageKey = function(name){
-          const safe = name === 'INVENTARIO' ? 'STOCK' : name;
-          return (this.storagePrefix || 'aura_planilla_') + safe;
-        };
-        Planilla.loadSheet = function(name){
-          const safe = name === 'INVENTARIO' ? 'STOCK' : name;
-          const raw = localStorage.getItem(this.getStorageKey(safe));
-          const fallback = safe === 'VENTAS'
-            ? JSON.parse(JSON.stringify((window.PLANILLA_BOOTSTRAP && PLANILLA_BOOTSTRAP.VENTAS) || { columns:['Categoría','Perfume'], rows:[] }))
-            : JSON.parse(JSON.stringify((window.PLANILLA_BOOTSTRAP && PLANILLA_BOOTSTRAP[safe]) || { columns:[], rows:[] }));
-          if (!raw) return fallback;
-          try {
-            const parsed = JSON.parse(raw);
-            return parsed && Array.isArray(parsed.columns) && Array.isArray(parsed.rows) ? parsed : fallback;
-          } catch(e){ return fallback; }
-        };
-        if (typeof Planilla.renderSheetPicker === 'function') Planilla.renderSheetPicker();
-        if (typeof Planilla.renderTabs === 'function') Planilla.renderTabs();
-      }
-      function profileFromProduct(product){
-        return product && (product.profile || product.perfil || product.family || product.olfactiveProfile || '') || '';
-      }
-      function computePriceRangeLabel(unitPrice, orderTotal){
-        const ref = Math.max(asNum(unitPrice), asNum(orderTotal));
-        if (!ref) return '';
-        if (ref < 10000) return '$8.000 - $21.000';
-        if (ref < 30000) return '$8.000 - $30.000';
-        if (ref < 50000) return '$25.000 - $60.000';
-        return '$50.000 - $100.000';
-      }
-      function patchPlanillaMethods(){
-        if (!window.Planilla) return;
-        ensurePlanillaStructure();
-        Planilla.registerOrderToClientes = function(order, manualOnly){
-          if (!order || order.planillaClientSync) return false;
-          if (!manualOnly && !isConfirmed(order.status)) return false;
-          ensurePlanillaStructure();
-          const sheet = this.sheets.CLIENTES || this.loadSheet('CLIENTES');
-          this.sheets.CLIENTES = sheet;
-          const customerName = String(order.customerName || order.name || 'Cliente sin nombre').trim() || 'Cliente sin nombre';
-          const formattedDate = formatDateDDMMYYYY(order.date || new Date().toISOString());
-          const items = Array.isArray(order.items) && order.items.length ? order.items : [{ name: order.product || 'Compra', qty:1, size:'', price: asNum(order.total) }];
-          const orderTotal = Math.max(0, Math.round(asNum(order.total || 0)));
-          const notes = String(order.notes || '').trim();
-          const rowsToInsert = [];
-          items.forEach((item, idx) => {
-            const qty = Math.max(1, Math.round(asNum(item.qty || 1)));
-            const labelQty = qty > 1 ? `${qty}x ` : '';
-            const size = String(item.size || '').trim();
-            const purchase = `${labelQty}${String(item.name || '').trim()}${size ? ' ' + size : ''}`.trim();
-            const product = resolveProduct(item);
-            const unitPrice = Math.max(0, Math.round(asNum(item.price || item.finalUnitPrice || 0)));
-            rowsToInsert.push([
-              idx === 0 ? customerName : '',
-              idx === 0 ? formattedDate : '',
-              purchase,
-              unitPrice,
-              profileFromProduct(product),
-              idx === 0 ? computePriceRangeLabel(unitPrice, orderTotal) : '',
-              idx === 0 ? orderTotal : '',
-              idx === 0 ? notes : ''
-            ]);
-          });
-          if (sheet.rows.length && sheet.rows[sheet.rows.length - 1].some(v => String(v || '').trim() !== '')) {
-            sheet.rows.push(['','','','','','','','']);
-          }
-          sheet.rows.push(...rowsToInsert);
-          order.planillaClientSync = true;
-          order.planillaClientSyncAt = new Date().toISOString();
-          if (typeof this.saveSheet === 'function') this.saveSheet('CLIENTES');
-          if (this.activeSheet === 'CLIENTES' && typeof this.render === 'function') this.render();
-          return true;
-        };
-        Planilla.syncPendingOrders = function(){
-          if (!Array.isArray(window.ORDERS)) return false;
-          let changed = false;
-          ORDERS.forEach(order => {
-            if (isConfirmed(order && order.status) && !order.planillaClientSync) {
-              if (this.registerOrderToClientes(order, false)) changed = true;
-            }
-          });
-          return changed;
-        };
-        Planilla.syncInventoryFromProducts = function(){
-          if (!Array.isArray(window.PRODUCTS)) return;
-          ensurePlanillaStructure();
-          const sheet = this.sheets.STOCK || this.loadSheet('STOCK');
-          this.sheets.STOCK = sheet;
-          const rows = [];
-          PRODUCTS.forEach(p => {
-            rows.push([
-              p.name || '',
-              (typeof getCategoryName === 'function' ? getCategoryName(p.cat) : (p.cat || '')),
-              (p.size || (typeof getSubcategoryName === 'function' ? getSubcategoryName(p.cat2) : (p.cat2 || '')) || ''),
-              Math.max(0, Math.round(asNum(p.stock || 0))),
-              Math.max(0, Math.round(asNum(p.price || 0)))
-            ]);
-          });
-          sheet.columns = ['Fragancia','Categoría','Subcategoría','Stock','Precio'];
-          sheet.rows = rows;
-          if (typeof this.saveSheet === 'function') this.saveSheet('STOCK');
-          if (this.activeSheet === 'STOCK' && typeof this.render === 'function') this.render();
-        };
-      }
-      function applyConfirmedOrderStock(order){
-        if (!order || !isConfirmed(order.status) || order.stockApplied || !Array.isArray(order.items)) return false;
-        let changed = false;
-        order.items.forEach(item => {
-          const product = resolveProduct(item);
-          if (!product) return;
-          const qty = Math.max(0, Math.round(asNum(item.qty || 0)));
-          const current = Math.max(0, Math.round(asNum(product.stock || 0)));
-          const next = Math.max(0, current - qty);
-          if (next !== current) {
-            product.stock = next;
-            changed = true;
-          }
-        });
-        if (changed) {
-          order.stockApplied = true;
-          order.stockAppliedAt = new Date().toISOString();
-        }
-        return changed;
-      }
-      function syncConfirmedOrders(){
-        let ordersChanged = false;
-        let productsChanged = false;
-        if (!Array.isArray(window.ORDERS)) return;
-        if (window.Planilla && !Planilla.initDone && typeof Planilla.init === 'function') {
-          try { Planilla.init(); } catch(e) {}
-        }
-        ORDERS.forEach(order => {
-          if (!order || !isConfirmed(order.status)) return;
-          if (window.Planilla && !order.planillaClientSync) {
-            if (Planilla.registerOrderToClientes(order, false)) ordersChanged = true;
-          }
-          if (!order.stockApplied) {
-            if (applyConfirmedOrderStock(order)) {
-              productsChanged = true;
-              ordersChanged = true;
-            }
-          }
-        });
-        if (productsChanged) {
-          localStorage.setItem('aura_products', JSON.stringify(window.PRODUCTS || []));
-          if (window.Planilla) Planilla.syncInventoryFromProducts();
-          if (window.Dash) {
-            Dash.renderInventory?.();
-            Dash.updatePanelKPIs?.();
-            Dash.initAnalytics?.();
-          }
-          if (typeof window.renderProducts === 'function') window.renderProducts();
-        }
-        if (ordersChanged) {
-          localStorage.setItem(SAFE_SAVE_ORDERS_KEY, JSON.stringify(window.ORDERS || []));
-          if (window.Dash) {
-            Dash.renderPedidos?.();
-            Dash.renderClientes?.();
-            Dash.updatePanelKPIs?.();
-            Dash.initAnalytics?.();
-          }
-        }
-      }
-      function installSafeSaveOrders(){
-        window.saveOrdersLS = function(){
-          localStorage.setItem(SAFE_SAVE_ORDERS_KEY, JSON.stringify(window.ORDERS || []));
-          syncConfirmedOrders();
-        };
-      }
-      function patchDash(){
-        if (!window.Dash || Dash.__auraFinalPatchDash) return;
-        const originalSetOrderStatus = typeof Dash.setOrderStatus === 'function' ? Dash.setOrderStatus : null;
-        if (originalSetOrderStatus) {
-          Dash.setOrderStatus = function(id, status){
-            const order = Array.isArray(window.ORDERS) ? ORDERS.find(o => o.id === id) : null;
-            if (order && isConfirmed(status)) {
-              const issues = getOrderStockWarnings(order);
-              if (issues.length && typeof window.showToast === 'function') {
-                const first = issues[0];
-                showToast(`Advertencia: ${first.product.name} no tiene stock suficiente. Se confirmará igual.`, true);
-              }
-            }
-            const out = originalSetOrderStatus.apply(this, arguments);
-            syncConfirmedOrders();
-            return out;
-          };
-        }
-        const originalSaveOrderEdit = typeof Dash.saveOrderEdit === 'function' ? Dash.saveOrderEdit : null;
-        if (originalSaveOrderEdit) {
-          Dash.saveOrderEdit = function(){
-            const out = originalSaveOrderEdit.apply(this, arguments);
-            syncConfirmedOrders();
-            return out;
-          };
-        }
-        const originalSaveManualOrder = typeof Dash.saveManualOrder === 'function' ? Dash.saveManualOrder : null;
-        if (originalSaveManualOrder) {
-          Dash.saveManualOrder = function(){
-            const out = originalSaveManualOrder.apply(this, arguments);
-            syncConfirmedOrders();
-            return out;
-          };
-        }
-        Dash.__auraFinalPatchDash = true;
-      }
-      function boot(){
-        patchCartConfirm();
-        installSafeSaveOrders();
-        if (window.Planilla) {
-          patchPlanillaMethods();
-          ensurePlanillaStructure();
-          if (!Planilla.initDone && typeof Planilla.init === 'function') {
-            try { Planilla.init(); } catch(e) {}
-          }
-          Planilla.syncInventoryFromProducts?.();
-          Planilla.syncPendingOrders?.();
-        }
-        patchDash();
-        syncConfirmedOrders();
-      }
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', boot, { once:true });
-      } else {
-        boot();
       }
     })();
   </script>
