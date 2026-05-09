@@ -28,448 +28,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="AURA - Perfumería" />
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js">
-
-/* MOD-1: disparadores psicologicos de compra */
-/* MOD-2: reseñas al final del carrito */
-/* MOD-3: banner inicial en la tienda */
-/* MOD-4: métricas comerciales reales */
-(function () {
-  const REVIEWS = [
-    { name: "Valentina M.", stars: 5, text: "Me enamoré del Yara, dura todo el día y el frasco es hermoso. ¡Lo recomiendo 100%!", product: "Yara" },
-    { name: "Lucía P.", stars: 5, text: "El Erba Pura es increíble, muy dulce y femenino. Ya pedí el segundo.", product: "Erba Pura" },
-    { name: "Carolina R.", stars: 5, text: "El 9pm para mi novio fue un éxito total, proyecto mucho y huele espectacular.", product: "9pm" },
-    { name: "Martina G.", stars: 5, text: "La atención es excelente y los perfumes son inigualables. ¡Volveré a comprar!", product: "AURA" },
-    { name: "Florencia T.", stars: 5, text: "Muy buena relación calidad-precio. El Khamrah es puro lujo árabe.", product: "Khamrah" },
-  ];
-
-  function safeJSONParse(raw, fallback) {
-    try { return JSON.parse(raw); } catch (e) { return fallback; }
-  }
-
-  function money(v) {
-    return '$' + Number(v || 0).toLocaleString('es-AR');
-  }
-
-  function getOfferDeadline() {
-    const key = 'aura_offer_deadline';
-    const now = Date.now();
-    let deadline = Number(localStorage.getItem(key) || 0);
-    if (!deadline || deadline <= now) {
-      deadline = now + (24 * 60 * 60 * 1000);
-      localStorage.setItem(key, String(deadline));
-    }
-    return deadline;
-  }
-
-  function formatRemaining(ms) {
-    const total = Math.max(0, Math.floor(ms / 1000));
-    const h = String(Math.floor(total / 3600)).padStart(2, '0');
-    const m = String(Math.floor((total % 3600) / 60)).padStart(2, '0');
-    const s = String(total % 60).padStart(2, '0');
-    return `${h}:${m}:${s}`;
-  }
-
-  function isOfferProduct(product) {
-    const badge = String(product?.badge || '').toUpperCase();
-    return product?.oferta === true || badge.includes('PROMO') || badge.includes('OFERTA');
-  }
-
-  function getPopularity(productId) {
-    const key = `aura_pop_${productId}`;
-    let value = Number(localStorage.getItem(key) || 0);
-    if (!value) {
-      value = Math.floor(Math.random() * 40) + 60;
-      localStorage.setItem(key, String(value));
-    }
-    return value;
-  }
-
-  function enhanceProductCards() {
-    const grid = document.getElementById('product-grid');
-    if (!grid) return;
-    const deadline = getOfferDeadline();
-    grid.querySelectorAll('.prod-card').forEach(card => {
-      const heart = card.querySelector('.prod-heart[data-pid]');
-      const productId = heart?.dataset?.pid;
-      const product = PRODUCTS.find(p => p.id === productId);
-      if (!product) return;
-      const body = card.querySelector('.prod-body');
-      const nameEl = card.querySelector('.prod-name');
-      const sizeEl = card.querySelector('.prod-size');
-      const priceEl = card.querySelector('.prod-price');
-      if (!body || !nameEl || !sizeEl || !priceEl) return;
-
-      card.querySelectorAll('.aura-stock-low,.aura-offer-timer,.aura-popularity').forEach(el => el.remove());
-
-      if (typeof product.stock === 'number' && product.stock <= 5 && product.stock > 0) {
-        const stock = document.createElement('div');
-        stock.className = 'aura-stock-low';
-        stock.textContent = `⚠️ ¡Solo quedan ${product.stock}!`;
-        nameEl.insertAdjacentElement('afterend', stock);
-      }
-
-      if (typeof product.stock !== 'undefined') {
-        const pop = document.createElement('div');
-        pop.className = 'aura-popularity';
-        pop.textContent = `🔥 ${getPopularity(product.id)} personas lo vieron hoy`;
-        sizeEl.insertAdjacentElement('afterend', pop);
-      }
-
-      if (isOfferProduct(product)) {
-        const timer = document.createElement('div');
-        timer.className = 'aura-offer-timer';
-        timer.dataset.offerDeadline = String(deadline);
-        timer.textContent = `🕐 Oferta termina en: ${formatRemaining(deadline - Date.now())}`;
-        const footer = card.querySelector('.prod-footer');
-        if (footer) footer.insertAdjacentElement('beforebegin', timer);
-      }
-    });
-  }
-
-  function updateOfferTimers() {
-    let deadline = getOfferDeadline();
-    const now = Date.now();
-    if (deadline <= now) {
-      deadline = now + (24 * 60 * 60 * 1000);
-      localStorage.setItem('aura_offer_deadline', String(deadline));
-    }
-    document.querySelectorAll('.aura-offer-timer').forEach(el => {
-      el.dataset.offerDeadline = String(deadline);
-      el.textContent = `🕐 Oferta termina en: ${formatRemaining(deadline - Date.now())}`;
-    });
-  }
-
-  function shufflePick(list, count) {
-    const arr = [...list];
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr.slice(0, count);
-  }
-
-  function injectCartReviews() {
-    const body = document.getElementById('cart-body');
-    if (!body || !Cart.items().length) return;
-    const old = document.getElementById('cart-reviews');
-    if (old) old.remove();
-    const reviews = shufflePick(REVIEWS, 3);
-    const wrap = document.createElement('div');
-    wrap.id = 'cart-reviews';
-    wrap.style.marginTop = '1.5rem';
-    wrap.innerHTML = `
-      <div style="font-family:'Cormorant Garamond',serif; font-size:1.15rem; color:#C9A84C; margin-bottom:0.75rem; font-weight:600">
-        ⭐ Lo que dicen nuestras clientas
-      </div>
-      <div class="cart-reviews-track">
-        ${reviews.map(r => `
-          <div class="cart-review-card">
-            <div class="cart-review-name">${escapeHtml(r.name)}</div>
-            <div class="cart-review-stars">${'★'.repeat(r.stars)}</div>
-            <div class="cart-review-text">${escapeHtml(r.text)}</div>
-            <div class="cart-review-product">Reseña sobre: ${escapeHtml(r.product)}</div>
-          </div>
-        `).join('')}
-      </div>`;
-    body.appendChild(wrap);
-  }
-
-  function getProductVisual(product) {
-    if (Array.isArray(product?.images) && product.images[0]) {
-      return `<img src="${product.images[0]}" alt="${escapeHtml(product.name)}">`;
-    }
-    return `<div class="aura-store-emoji">${escapeHtml(product?.emoji || '🌸')}</div>`;
-  }
-
-  function chooseBannerProducts() {
-    const valid = [...PRODUCTS].filter(p => typeof p.price === 'number');
-    if (!valid.length) return [];
-    const byPrice = [...valid].sort((a, b) => (b.price || 0) - (a.price || 0));
-    const estrella = valid.find(p => String(p.badge || '').toUpperCase() === 'ESTRELLA') || byPrice[0];
-    let recomendado = valid.find(p => {
-      const badge = String(p.badge || '').toUpperCase();
-      return badge === 'TOP' || badge === 'RECOMENDADO';
-    }) || byPrice[1] || byPrice[0];
-    if (recomendado && estrella && recomendado.id === estrella.id) recomendado = byPrice.find(p => p.id !== estrella.id) || recomendado;
-    return [
-      { kicker: 'Producto estrella', text: estrella, button: 'Ver producto' },
-      { kicker: '⭐ Recomendado para vos', text: recomendado, button: 'Ver producto' }
-    ].filter(x => x.text);
-  }
-
-  let bannerIndex = 0;
-  let bannerInterval = null;
-  let bannerStartX = null;
-
-  function goToBannerSlide(index) {
-    const banner = document.getElementById('aura-store-banner');
-    if (!banner) return;
-    const track = banner.querySelector('.aura-store-banner-track');
-    const dots = banner.querySelectorAll('.aura-store-dot');
-    const total = dots.length || 1;
-    bannerIndex = ((index % total) + total) % total;
-    if (track) track.style.transform = `translateX(-${bannerIndex * 100}%)`;
-    dots.forEach((dot, i) => dot.classList.toggle('active', i === bannerIndex));
-  }
-
-  function restartBannerAuto() {
-    clearInterval(bannerInterval);
-    const banner = document.getElementById('aura-store-banner');
-    if (!banner) return;
-    const total = banner.querySelectorAll('.aura-store-dot').length;
-    if (total <= 1) return;
-    bannerInterval = setInterval(() => goToBannerSlide(bannerIndex + 1), 5000);
-  }
-
-  function scrollToProductCard(productId) {
-    const targetHeart = document.querySelector(`.prod-heart[data-pid="${productId}"]`);
-    const card = targetHeart?.closest('.prod-card');
-    const screen = document.getElementById('s-store');
-    if (!card || !screen) return;
-    const top = card.offsetTop - 90;
-    screen.scrollTo({ top, behavior: 'smooth' });
-  }
-
-  function initStoreBanner() {
-    const storeBody = document.querySelector('#s-store .store-body');
-    const hero = document.getElementById('store-hero');
-    if (!storeBody || !hero) return;
-    let banner = document.getElementById('aura-store-banner');
-    if (!banner) {
-      banner = document.createElement('div');
-      banner.id = 'aura-store-banner';
-      banner.className = 'aura-store-banner';
-      storeBody.insertBefore(banner, hero);
-    }
-    const slides = chooseBannerProducts();
-    if (!slides.length) {
-      banner.style.display = 'none';
-      return;
-    }
-    banner.style.display = '';
-    banner.innerHTML = `
-      <div class="aura-store-banner-track">
-        ${slides.map(slide => `
-          <div class="aura-store-slide">
-            <div class="aura-store-media">${getProductVisual(slide.text)}</div>
-            <div class="aura-store-copy">
-              <div class="aura-store-kicker">${slide.kicker}</div>
-              <div class="aura-store-title">${escapeHtml(slide.text.name)}</div>
-              <div class="aura-store-price">${money(slide.text.price)}</div>
-              <button class="aura-store-btn" type="button" data-product-id="${slide.text.id}">${slide.button}</button>
-            </div>
-          </div>
-        `).join('')}
-      </div>
-      <div class="aura-store-dots">
-        ${slides.map((_, i) => `<button class="aura-store-dot ${i === 0 ? 'active' : ''}" type="button" data-index="${i}" aria-label="Ir al slide ${i + 1}"></button>`).join('')}
-      </div>`;
-
-    banner.querySelectorAll('.aura-store-dot').forEach(dot => {
-      dot.addEventListener('click', () => {
-        goToBannerSlide(Number(dot.dataset.index || 0));
-        restartBannerAuto();
-      });
-    });
-
-    banner.querySelectorAll('.aura-store-btn').forEach(btn => {
-      btn.addEventListener('click', () => scrollToProductCard(btn.dataset.productId));
-    });
-
-    banner.onpointerdown = e => { bannerStartX = e.clientX; };
-    banner.onpointerup = e => {
-      if (bannerStartX == null) return;
-      const dx = e.clientX - bannerStartX;
-      if (Math.abs(dx) > 40) goToBannerSlide(bannerIndex + (dx < 0 ? 1 : -1));
-      bannerStartX = null;
-      restartBannerAuto();
-    };
-    banner.onpointercancel = () => { bannerStartX = null; };
-
-    goToBannerSlide(0);
-    restartBannerAuto();
-  }
-
-  function getSalesHistory() {
-    const key = 'aura_sales_history';
-    const existing = safeJSONParse(localStorage.getItem(key), null);
-    if (Array.isArray(existing) && existing.length) return existing;
-    const history = [];
-    const products = PRODUCTS.filter(p => typeof p.price === 'number');
-    const today = new Date();
-    for (let dayOffset = 29; dayOffset >= 0; dayOffset--) {
-      const d = new Date(today);
-      d.setDate(today.getDate() - dayOffset);
-      const day = d.toISOString().slice(0, 10);
-      const salesCount = Math.floor(Math.random() * 21) + 5;
-      for (let i = 0; i < salesCount; i++) {
-        const product = products[Math.floor(Math.random() * products.length)] || products[0];
-        if (!product) continue;
-        history.push({
-          date: day,
-          productId: product.id,
-          qty: Math.floor(Math.random() * 3) + 1,
-          price: Number(product.price || 0)
-        });
-      }
-    }
-    localStorage.setItem(key, JSON.stringify(history));
-    return history;
-  }
-
-  function buildCommercialMetrics() {
-    const history = getSalesHistory();
-    const today = new Date().toISOString().slice(0, 10);
-    const yesterdayDate = new Date();
-    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-    const yesterday = yesterdayDate.toISOString().slice(0, 10);
-
-    const salesToday = history.filter(s => s.date === today).reduce((acc, s) => acc + Number(s.qty || 0), 0);
-    const salesYesterday = history.filter(s => s.date === yesterday).reduce((acc, s) => acc + Number(s.qty || 0), 0);
-    const diff = salesToday - salesYesterday;
-
-    const revenue = history.reduce((acc, s) => acc + Number(s.qty || 0) * Number(s.price || 0), 0);
-    const avgTicket = history.length ? Math.round(revenue / history.length) : 0;
-
-    const byProduct = {};
-    history.forEach(s => { byProduct[s.productId] = (byProduct[s.productId] || 0) + Number(s.qty || 0); });
-    const top3 = Object.entries(byProduct)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
-      .map(([productId, qty]) => ({ product: PRODUCTS.find(p => p.id === productId), qty }));
-
-    const rotation = PRODUCTS
-      .filter(p => typeof p.stock === 'number')
-      .map(p => {
-        const sold = byProduct[p.id] || 0;
-        const denominator = Math.max(1, Number(p.stock || 0));
-        return { product: p, ratio: sold / denominator };
-      })
-      .sort((a, b) => b.ratio - a.ratio)[0];
-
-    return {
-      salesToday,
-      diff,
-      avgTicket,
-      top3,
-      rotation
-    };
-  }
-
-  function renderCommercialMetrics() {
-    const panel = document.getElementById('sec-panel');
-    const chartCard = panel?.querySelector('.chart-card');
-    if (!panel || !chartCard) return;
-    let wrap = document.getElementById('aura-commercial-metrics');
-    if (!wrap) {
-      wrap = document.createElement('div');
-      wrap.id = 'aura-commercial-metrics';
-      wrap.className = 'aura-metrics-wrap';
-      chartCard.parentNode.insertBefore(wrap, chartCard);
-    }
-
-    const data = buildCommercialMetrics();
-    const diffClass = data.diff >= 0 ? 'positive' : 'negative';
-    const diffText = `${data.diff >= 0 ? '+' : ''}${data.diff} vs ayer`;
-    const rotationName = data.rotation?.product?.name || 'Sin datos';
-    const rotationRatio = data.rotation ? `${data.rotation.ratio.toFixed(1)}x` : '0x';
-    const needRestock = (data.rotation?.ratio || 0) > 2;
-
-    wrap.innerHTML = `
-      <div class="aura-metrics-title">📊 Métricas Comerciales</div>
-      <div class="aura-commercial-grid">
-        <div class="aura-commercial-card">
-          <div class="aura-commercial-head" style="color:var(--green)">📦 Ventas por día</div>
-          <div class="aura-commercial-value">${data.salesToday}</div>
-          <div class="aura-commercial-sub ${diffClass}">${diffText}</div>
-        </div>
-        <div class="aura-commercial-card">
-          <div class="aura-commercial-head" style="color:var(--gold)">🧾 Ticket promedio</div>
-          <div class="aura-commercial-value">${money(data.avgTicket)}</div>
-          <div class="aura-commercial-sub">Promedio últimos 30 días</div>
-        </div>
-        <div class="aura-commercial-card tall">
-          <div class="aura-commercial-head" style="color:var(--gold)">🏆 Productos más vendidos</div>
-          <div class="aura-commercial-list">
-            ${data.top3.map((row, idx) => `<div><span>${idx + 1}. ${escapeHtml(row.product?.name || 'Producto')}</span><strong>${row.qty} uds.</strong></div>`).join('') || '<div><span>Sin ventas</span><strong>0 uds.</strong></div>'}
-          </div>
-        </div>
-        <div class="aura-commercial-card">
-          <div class="aura-commercial-head" style="color:var(--orange)">🔄 Rotación de stock</div>
-          <div class="aura-commercial-value">${escapeHtml(rotationName)}</div>
-          <div class="aura-commercial-sub" style="color:${needRestock ? 'var(--red)' : 'var(--text)'}">${rotationRatio}</div>
-          ${needRestock ? '<div class="aura-rotation-alert">⚠️ Reabastecer</div>' : '<div class="aura-commercial-sub">Mayor rotación de los últimos 30 días</div>'}
-        </div>
-      </div>`;
-  }
-
-  const originalRenderProducts = renderProducts;
-  renderProducts = function () {
-    originalRenderProducts.apply(this, arguments);
-    enhanceProductCards();
-    initStoreBanner();
-    updateOfferTimers();
-  };
-
-  const originalCartOpen = Cart.open;
-  Cart.open = function () {
-    const result = originalCartOpen.apply(this, arguments);
-    setTimeout(injectCartReviews, 0);
-    return result;
-  };
-
-  ['addItem', 'updateQty', 'remove'].forEach(method => {
-    const original = Cart[method];
-    Cart[method] = function () {
-      const result = original.apply(this, arguments);
-      setTimeout(injectCartReviews, 0);
-      return result;
-    };
-  });
-
-  const originalDashKPIs = Dash.updatePanelKPIs;
-  Dash.updatePanelKPIs = function () {
-    const result = originalDashKPIs.apply(this, arguments);
-    renderCommercialMetrics();
-    return result;
-  };
-
-  const originalAppShow = App.show;
-  App.show = function (id) {
-    const result = originalAppShow.apply(this, arguments);
-    if (id === 's-store') {
-      setTimeout(() => {
-        initStoreBanner();
-        enhanceProductCards();
-        updateOfferTimers();
-      }, 30);
-    }
-    if (id === 's-dashboard') {
-      setTimeout(renderCommercialMetrics, 120);
-    }
-    return result;
-  };
-
-  setInterval(updateOfferTimers, 1000);
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      initStoreBanner();
-      enhanceProductCards();
-      renderCommercialMetrics();
-      updateOfferTimers();
-    });
-  } else {
-    initStoreBanner();
-    enhanceProductCards();
-    renderCommercialMetrics();
-    updateOfferTimers();
-  }
-})();
-
-</script>
-<script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
   <link
     href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Montserrat:wght@300;400;500;600;700&display=swap"
     rel="stylesheet" />
@@ -6295,6 +5855,1256 @@
       }
     }
 
+    /* CSS CONSOLIDADO DESDE BLOQUE 2 */
+    .promo-cover-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+    .promo-cover-card{background:var(--card);border-radius:16px;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.08);cursor:pointer;transition:transform .22s ease,box-shadow .22s ease;border:1px solid rgba(12,15,26,.08)}
+    .promo-cover-card:hover{transform:scale(1.02);box-shadow:0 12px 30px rgba(0,0,0,.12)}
+    .promo-cover-media{position:relative;height:190px;background:linear-gradient(135deg,#0f1737,#1b295d);display:flex;align-items:center;justify-content:center;overflow:hidden}
+    .promo-cover-media img{width:100%;height:100%;object-fit:cover}
+    .promo-cover-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:3.5rem;color:#fff;background:radial-gradient(circle at 30% 20%,rgba(214,182,106,.45),transparent 35%),linear-gradient(135deg,#0b1023,#14204e)}
+    .promo-cover-status{position:absolute;top:.65rem;right:.65rem;padding:.3rem .65rem;border-radius:99px;font-size:.62rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+    .promo-cover-status.activa{background:linear-gradient(135deg,#E2C987,#B9933B);color:#1a1200}
+    .promo-cover-status.agotada{background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.25)}
+    .promo-cover-body{padding:1rem .95rem 1rem}
+    .promo-cover-name{font-family:'Cormorant Garamond',serif;font-size:1.45rem;color:var(--text);line-height:1;margin-bottom:.35rem}
+    .promo-cover-note{font-size:.77rem;color:var(--muted);min-height:2.3em;line-height:1.45;margin-bottom:.8rem}
+    .promo-cover-price{display:flex;align-items:center;justify-content:space-between;gap:.75rem;font-size:.78rem}
+    .promo-cover-price strong{font-size:1rem;color:var(--gold2)}
+    .promo-detail-list{display:grid;gap:.65rem}
+    .promo-detail-box{background:#f8fafc;border:1px solid var(--border);border-radius:12px;padding:.85rem .9rem}
+    .promo-detail-label{font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:.35rem;font-weight:700}
+    .promo-detail-tierchips{display:flex;flex-wrap:wrap;gap:.45rem}
+    .promo-detail-tier{padding:.45rem .7rem;border-radius:99px;background:#0f1737;color:#fff;font-size:.72rem;font-weight:700}
+    .promo-detail-products{display:flex;flex-wrap:wrap;gap:.45rem}
+    .promo-detail-prod{padding:.42rem .7rem;border-radius:99px;background:rgba(185,147,59,.12);color:#5a430a;font-size:.72rem;font-weight:700;border:1px solid rgba(185,147,59,.22)}
+    .promo-detail-empty{font-size:.78rem;color:var(--muted)}
+    .promo-modal.higher-detail{max-width:720px;background:#fff;color:var(--text)}
+    .promo-modal.higher-detail .promo-modal-hdr{background:linear-gradient(135deg,#0f1737,#15265d)}
+    .promo-modal.higher-detail .promo-modal-title{color:#fff}
+    .promo-modal.higher-detail .promo-modal-body{background:#fff;max-height:62vh;overflow:auto}
+    .promo-modal.higher-detail .promo-modal-ftr{background:#fff;border-top:1px solid var(--border)}
+    .promo-modal.higher-detail .promo-modal-x{color:rgba(255,255,255,.72)}
+    .prod-promo-btn{display:inline-flex;align-items:center;gap:.28rem;padding:.22rem .55rem;font-size:.62rem;font-weight:600;letter-spacing:.03em;color:#C9A84C;background:transparent;border:1px solid rgba(201,168,76,.35);border-radius:99px;cursor:pointer;transition:border-color .2s, background .2s;white-space:nowrap;width:auto;align-self:flex-start}
+    .prod-promo-btn:hover{background:rgba(201,168,76,.08);border-color:rgba(201,168,76,.6)}
+    .prod-promo-btn .promo-btn-icon{font-size:.65rem;opacity:.75}
+    .detail-promos-wrap{margin-top:1rem}
+    .detail-promo-item{padding:.7rem .8rem;border:1px solid var(--border);border-radius:12px;background:#fff;margin-bottom:.55rem}
+    .detail-promo-name{font-size:.8rem;font-weight:700;color:var(--text);margin-bottom:.25rem}
+    .detail-promo-tiers{font-size:.74rem;color:var(--muted);line-height:1.45}
+    .promo-assign-overlay{position:fixed;inset:0;background:rgba(4,7,26,.6);display:none;align-items:center;justify-content:center;z-index:3100;padding:1rem}
+    .promo-assign-overlay.active{display:flex}
+    .promo-assign-modal{width:min(520px,96vw);background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.35)}
+    .promo-assign-hdr{background:linear-gradient(135deg,#0f1737,#15265d);padding:1rem 1.1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+    .promo-assign-title{color:#fff;font-size:1.5rem}
+    .promo-assign-x{border:none;background:none;color:rgba(255,255,255,.8);font-size:1.15rem}
+    .promo-assign-body{padding:1rem;display:grid;gap:.7rem;max-height:60vh;overflow:auto}
+    .promo-assign-row{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;padding:.85rem .9rem;border:1px solid var(--border);border-radius:14px;background:#fff}
+    .promo-assign-row-main{flex:1}
+    .promo-assign-row-name{font-size:.82rem;font-weight:700;color:var(--text);margin-bottom:.18rem}
+    .promo-assign-row-sub{font-size:.72rem;color:var(--muted);line-height:1.45}
+    .promo-assign-ftr{padding:1rem;border-top:1px solid var(--border);display:flex;justify-content:flex-end;background:#fff}
+    .promo-inline-box{margin-top:1rem;padding:1rem;border:1px solid var(--border);border-radius:14px;background:#fbfcfe}
+    .promo-inline-grid{display:grid;gap:.6rem;margin-top:.8rem}
+    .promo-inline-row{display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem;padding:.7rem .75rem;border:1px solid var(--border);border-radius:12px;background:#fff}
+    .promo-inline-meta{font-size:.73rem;color:var(--muted);line-height:1.4}
+    .promo-admin-count{font-size:.72rem;color:var(--muted);margin-top:.22rem}
+    .promo-admin-count a{color:var(--gold2);text-decoration:none;font-weight:700}
+    @media(min-width:900px){.promo-cover-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    @media(max-width:480px){.promo-cover-media{height:150px}.promo-cover-body{padding:.85rem}.prod-promo-btn{padding:.22rem .5rem;font-size:.62rem}}
+
+    /* CSS CONSOLIDADO DESDE BLOQUE 3 */
+    .prod-promo-badge-img{
+      position:absolute;
+      top:.55rem;
+      left:.55rem;
+      z-index:4;
+      display:inline-flex;
+      align-items:center;
+      gap:.35rem;
+      max-width:calc(100% - 1.1rem);
+      padding:.34rem .62rem;
+      border-radius:999px;
+      background:rgba(8,12,34,.82);
+      color:var(--gold);
+      border:1px solid rgba(214,182,106,.42);
+      box-shadow:0 8px 22px rgba(0,0,0,.18);
+      backdrop-filter:blur(8px);
+      -webkit-backdrop-filter:blur(8px);
+      font-size:.60rem;
+      font-weight:800;
+      letter-spacing:.07em;
+      text-transform:uppercase;
+      line-height:1;
+      pointer-events:none;
+    }
+    .prod-promo-badge-img .promo-badge-count{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:1rem;
+      height:1rem;
+      padding:0 .24rem;
+      border-radius:999px;
+      background:linear-gradient(135deg,#E2C987,#B9933B);
+      color:#1a1200;
+      font-size:.56rem;
+      font-weight:900;
+    }
+    .prod-footer .prod-promo-btn{
+      flex:0 0 auto;
+      height:42px;
+      padding:0 .82rem;
+      border:none;
+      border-radius:12px;
+      background:rgba(12,15,26,.06);
+      color:var(--gold2);
+      font-size:.68rem;
+      font-weight:700;
+      letter-spacing:.03em;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:.38rem;
+      transition:background .2s ease,color .2s ease,transform .2s ease;
+    }
+    .prod-footer .prod-promo-btn:hover{
+      background:rgba(12,15,26,.1);
+      color:#8c6b1f;
+      transform:translateY(-1px);
+    }
+    .prod-footer{
+      display:flex;
+      align-items:center;
+      gap:.5rem;
+      flex-wrap:wrap;
+    }
+    .prod-footer .prod-price{
+      margin-right:auto;
+    }
+    .cart-discount-row{
+      background:rgba(16,185,129,.08);
+      border:1px solid rgba(16,185,129,.18);
+      border-radius:10px;
+      padding:.6rem .72rem;
+      margin:.35rem 0;
+    }
+    .cart-discount-meta{
+      display:block;
+      font-size:.69rem;
+      color:#0b8f62;
+      margin-top:.12rem;
+      font-weight:600;
+    }
+    @media (max-width:480px){
+      .prod-promo-badge-img{
+        top:.45rem;
+        left:.45rem;
+        font-size:.56rem;
+        padding:.30rem .56rem;
+      }
+      .prod-footer .prod-promo-btn{
+        width:100%;
+        order:3;
+      }
+      .prod-footer .prod-atc{
+        flex:1 1 auto;
+      }
+    }
+
+    .cart-promo-progress {
+      background: rgba(16,185,129,.07);
+      border: 1px solid rgba(16,185,129,.22);
+      border-radius: 10px;
+      padding: .7rem .9rem;
+      margin-bottom: .55rem;
+      font-size: .74rem;
+      font-family: inherit;
+    }
+    .cart-promo-progress .promo-progress-label {
+      color: #0d6e4f;
+      font-weight: 700;
+      margin-bottom: .35rem;
+      line-height: 1.35;
+    }
+    .cart-promo-progress .promo-progress-sub {
+      color: #64748b;
+      font-size: .68rem;
+      margin-top: .15rem;
+    }
+    .promo-progress-bar {
+      height: 6px;
+      background: rgba(16,185,129,.15);
+      border-radius: 99px;
+      margin-top: .5rem;
+      overflow: hidden;
+    }
+    .promo-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #10B981, #34d399);
+      border-radius: 99px;
+      transition: width .4s ease;
+    }
+    .cart-promo-active-line {
+      background: rgba(16,185,129,.1);
+      border: 1px solid rgba(16,185,129,.28);
+      border-radius: 10px;
+      padding: .55rem .9rem;
+      margin-bottom: .45rem;
+      font-size: .74rem;
+      font-weight: 600;
+      color: #0a6644;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: .5rem;
+    }
+    .cart-subtotal-original {
+      text-decoration: line-through;
+      color: #94a3b8;
+      font-size: .81rem;
+      margin-right: .35rem;
+    }
+    .cart-subtotal-discount {
+      color: #10B981;
+      font-weight: 700;
+    }
+    .ci-promo-tag {
+      display: inline-block;
+      background: rgba(16,185,129,.1);
+      color: #0a6644;
+      border: 1px solid rgba(16,185,129,.25);
+      border-radius: 99px;
+      font-size: .60rem;
+      font-weight: 700;
+      padding: .18rem .55rem;
+      letter-spacing: .04em;
+      margin: .22rem 0 .1rem;
+    }
+
+    /* CSS CONSOLIDADO DESDE BLOQUE 4 */
+    /* AURA ecommerce method layer: product clarity, add confirmation and stepped checkout */
+    .product-grid.aura-enhanced-products {
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      align-items: stretch;
+    }
+
+    .aura-enhanced-products .prod-card:not(.promo-card) {
+      border: 1px solid rgba(201, 168, 76, .16);
+      background: linear-gradient(180deg, rgba(255, 255, 255, .98), rgba(255, 255, 255, .94));
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+    }
+
+    .aura-enhanced-products .prod-card:not(.promo-card) .prod-thumb {
+      height: auto;
+      aspect-ratio: 1 / 1.12;
+      background: #f4efe7;
+    }
+
+    .aura-enhanced-products .prod-card:not(.promo-card) .prod-body {
+      padding: .9rem .9rem 1rem;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .aura-enhanced-products .prod-card:not(.promo-card) .prod-cat {
+      font-size: .56rem;
+      margin-bottom: .24rem;
+    }
+
+    .aura-enhanced-products .prod-card:not(.promo-card) .prod-name {
+      font-size: 1.03rem;
+      line-height: 1.08;
+      min-height: 2.2em;
+      margin-bottom: .3rem;
+    }
+
+    .aura-enhanced-products .prod-card:not(.promo-card) .prod-size {
+      font-size: .62rem;
+      margin-bottom: .48rem;
+    }
+
+    .aura-enhanced-products .prod-card:not(.promo-card) .prod-footer {
+      margin-top: auto;
+      gap: .45rem;
+    }
+
+    .aura-enhanced-products .prod-card:not(.promo-card) .prod-price {
+      font-size: 1rem;
+      letter-spacing: .01em;
+    }
+
+    .aura-product-pay-info {
+      display: grid;
+      gap: .16rem;
+      width: 100%;
+      margin-top: -.08rem;
+      margin-bottom: .12rem;
+    }
+
+    .aura-stock-alert {
+      width: 100%;
+      font-size: .64rem;
+      color: #9f6a12;
+      background: rgba(201, 168, 76, .12);
+      border: 1px solid rgba(201, 168, 76, .18);
+      border-radius: 8px;
+      padding: .34rem .45rem;
+      line-height: 1.18;
+      margin-bottom: .12rem;
+    }
+
+    .aura-enhanced-products .prod-card:not(.promo-card) .prod-atc {
+      min-height: 38px;
+      border-radius: 9px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .aura-added-cart-bar {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      width: min(520px, calc(100vw - 24px));
+      transform: translate(-50%, 120%);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 2800;
+      display: grid;
+      grid-template-columns: 58px minmax(0, 1fr) 34px;
+      gap: .75rem;
+      align-items: center;
+      padding: .72rem .8rem;
+      background: rgba(12, 15, 26, .96);
+      color: #fff;
+      border: 1px solid rgba(201, 168, 76, .32);
+      border-radius: 14px;
+      box-shadow: 0 18px 44px rgba(0, 0, 0, .26);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      transition: transform .28s ease, opacity .28s ease;
+    }
+
+    .aura-added-cart-bar.show {
+      transform: translate(-50%, 0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .aura-added-thumb {
+      width: 58px;
+      height: 58px;
+      border-radius: 10px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, .08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gold);
+      font-size: 1.6rem;
+    }
+
+    .aura-added-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .aura-added-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1rem;
+      line-height: 1.08;
+      color: #fff;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .aura-added-meta {
+      margin-top: .18rem;
+      font-size: .72rem;
+      color: rgba(255, 255, 255, .72);
+    }
+
+    .aura-added-strong {
+      margin-top: .16rem;
+      font-size: .72rem;
+      font-weight: 800;
+      color: var(--gold);
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .aura-added-close,
+    .aura-checkout-close {
+      border: none;
+      background: rgba(255, 255, 255, .1);
+      color: #fff;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .9rem;
+    }
+
+    .aura-checkout-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 3000;
+      background: rgba(6, 8, 20, .58);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .24s ease;
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+    }
+
+    .aura-checkout-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .aura-checkout-panel {
+      position: fixed;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: min(620px, 100vw);
+      background: var(--card);
+      color: var(--text);
+      z-index: 3001;
+      transform: translateX(102%);
+      transition: transform .28s ease;
+      box-shadow: -18px 0 50px rgba(0, 0, 0, .24);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .aura-checkout-panel.open {
+      transform: translateX(0);
+    }
+
+    .aura-checkout-head {
+      padding: 1rem 1.15rem .85rem;
+      background: var(--text);
+      color: #fff;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .aura-checkout-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.55rem;
+      line-height: 1;
+      color: #fff;
+    }
+
+    .aura-checkout-sub {
+      margin-top: .24rem;
+      font-size: .68rem;
+      color: rgba(255, 255, 255, .66);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .aura-checkout-scroll {
+      overflow: auto;
+      padding: 1rem 1.15rem 1.2rem;
+      flex: 1;
+      background: linear-gradient(180deg, rgba(255, 255, 255, .98), rgba(248, 246, 241, .96));
+    }
+
+    .aura-stepper {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: .45rem;
+      align-items: center;
+      margin-bottom: .9rem;
+    }
+
+    .aura-step {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+      min-width: 0;
+      color: #9aa0aa;
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .aura-step::after {
+      content: "";
+      height: 1px;
+      background: rgba(12, 15, 26, .12);
+      flex: 1;
+      min-width: 8px;
+    }
+
+    .aura-step:last-child::after {
+      display: none;
+    }
+
+    .aura-step-mark {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 1px solid rgba(12, 15, 26, .18);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      color: #9aa0aa;
+      flex: 0 0 auto;
+      font-size: .72rem;
+    }
+
+    .aura-step.done,
+    .aura-step.active {
+      color: var(--text);
+    }
+
+    .aura-step.done .aura-step-mark,
+    .aura-step.active .aura-step-mark {
+      border-color: var(--gold);
+      background: var(--text);
+      color: var(--gold);
+    }
+
+    .aura-checkout-summary,
+    .aura-checkout-card {
+      border: 1px solid rgba(12, 15, 26, .09);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .86);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .045);
+      overflow: hidden;
+      margin-bottom: .85rem;
+    }
+
+    .aura-summary-toggle {
+      width: 100%;
+      border: none;
+      background: transparent;
+      padding: .85rem .9rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .8rem;
+      cursor: pointer;
+      color: var(--text);
+      font-weight: 800;
+      font-size: .8rem;
+    }
+
+    .aura-summary-toggle span:first-child {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      min-width: 0;
+    }
+
+    .aura-summary-caret {
+      width: 14px;
+      height: 14px;
+      transition: transform .2s ease;
+      color: var(--gold);
+    }
+
+    .aura-summary-caret.open {
+      transform: rotate(180deg);
+    }
+
+    .aura-summary-total {
+      color: var(--gold);
+      white-space: nowrap;
+    }
+
+    .aura-summary-body {
+      border-top: 1px solid rgba(12, 15, 26, .08);
+      padding: .3rem .9rem .85rem;
+      display: grid;
+      gap: .62rem;
+    }
+
+    .aura-summary-item {
+      display: grid;
+      grid-template-columns: 46px minmax(0, 1fr) auto;
+      gap: .65rem;
+      align-items: center;
+    }
+
+    .aura-summary-thumb {
+      width: 46px;
+      height: 46px;
+      border-radius: 9px;
+      overflow: hidden;
+      background: #f0ede8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gold);
+    }
+
+    .aura-summary-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .aura-summary-name {
+      font-size: .78rem;
+      font-weight: 800;
+      line-height: 1.14;
+      color: var(--text);
+    }
+
+    .aura-summary-meta {
+      margin-top: .12rem;
+      font-size: .66rem;
+      color: var(--muted);
+    }
+
+    .aura-summary-money {
+      font-size: .76rem;
+      font-weight: 800;
+      color: var(--text);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .aura-summary-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      font-size: .74rem;
+      color: var(--muted);
+    }
+
+    .aura-summary-row strong {
+      color: var(--text);
+    }
+
+    .aura-summary-row.discount {
+      color: #15803d;
+    }
+
+    .aura-summary-row.total {
+      padding-top: .55rem;
+      margin-top: .2rem;
+      border-top: 1px solid rgba(12, 15, 26, .09);
+      color: var(--text);
+      font-size: .88rem;
+      font-weight: 900;
+    }
+
+    .aura-checkout-card {
+      padding: .9rem;
+    }
+
+    .aura-checkout-card-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.18rem;
+      line-height: 1;
+      color: var(--text);
+      margin-bottom: .32rem;
+    }
+
+    .aura-checkout-card-sub {
+      font-size: .7rem;
+      color: var(--muted);
+      line-height: 1.35;
+      margin-bottom: .85rem;
+    }
+
+    .aura-coupon-toggle {
+      border: none;
+      background: transparent;
+      color: var(--gold);
+      padding: 0;
+      font-size: .76rem;
+      font-weight: 800;
+      cursor: pointer;
+      margin-bottom: .7rem;
+    }
+
+    .aura-coupon-row,
+    .aura-checkout-form {
+      display: grid;
+      gap: .65rem;
+    }
+
+    .aura-coupon-row {
+      grid-template-columns: minmax(0, 1fr) auto;
+      margin-bottom: .55rem;
+    }
+
+    .aura-checkout-form.two {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .aura-field.full {
+      grid-column: 1 / -1;
+    }
+
+    .aura-label {
+      display: block;
+      font-size: .62rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: .24rem;
+    }
+
+    .aura-input,
+    .aura-select {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid rgba(12, 15, 26, .12);
+      border-radius: 10px;
+      background: #fff;
+      color: var(--text);
+      padding: .55rem .68rem;
+      font-size: .84rem;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .aura-input:focus,
+    .aura-select:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(201, 168, 76, .13);
+    }
+
+    .aura-check {
+      display: flex;
+      align-items: center;
+      gap: .45rem;
+      font-size: .72rem;
+      color: var(--muted);
+      line-height: 1.25;
+      cursor: pointer;
+    }
+
+    .aura-choice-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .55rem;
+      margin-bottom: .75rem;
+    }
+
+    .aura-zone-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .aura-choice {
+      border: 1px solid rgba(12, 15, 26, .12);
+      background: #fff;
+      border-radius: 11px;
+      padding: .68rem;
+      text-align: left;
+      cursor: pointer;
+      color: var(--text);
+    }
+
+    .aura-choice.active {
+      border-color: var(--gold);
+      background: rgba(201, 168, 76, .1);
+      box-shadow: inset 0 0 0 1px rgba(201, 168, 76, .2);
+    }
+
+    .aura-choice strong {
+      display: block;
+      font-size: .8rem;
+      margin-bottom: .16rem;
+    }
+
+    .aura-choice span {
+      display: block;
+      font-size: .66rem;
+      color: var(--muted);
+      line-height: 1.28;
+    }
+
+    .aura-checkout-actions {
+      display: flex;
+      justify-content: space-between;
+      gap: .65rem;
+      margin-top: .9rem;
+    }
+
+    .aura-btn-primary,
+    .aura-btn-secondary {
+      min-height: 42px;
+      border-radius: 10px;
+      padding: .62rem .9rem;
+      font-size: .74rem;
+      font-weight: 900;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .aura-btn-primary {
+      border: 1px solid var(--text);
+      background: var(--text);
+      color: #fff;
+      flex: 1;
+    }
+
+    .aura-btn-secondary {
+      border: 1px solid rgba(12, 15, 26, .14);
+      background: #fff;
+      color: var(--text);
+    }
+
+    .aura-msg {
+      font-size: .7rem;
+      color: var(--muted);
+      min-height: 1em;
+    }
+
+    .aura-msg.error {
+      color: #b91c1c;
+    }
+
+    .aura-msg.ok {
+      color: #15803d;
+    }
+
+    .aura-payment-total {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: .85rem;
+      border-radius: 12px;
+      background: var(--text);
+      color: #fff;
+      margin-bottom: .8rem;
+    }
+
+    .aura-payment-total span {
+      font-size: .68rem;
+      color: rgba(255, 255, 255, .68);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .aura-payment-total strong {
+      font-size: 1.28rem;
+      color: var(--gold);
+    }
+
+    .aura-empty-checkout {
+      text-align: center;
+      padding: 2rem .7rem;
+      color: var(--muted);
+      font-size: .82rem;
+    }
+
+    .aura-admin-checkout-fields {
+      display: grid;
+      gap: .75rem;
+    }
+
+    .aura-admin-field-row {
+      display: grid;
+      grid-template-columns: minmax(150px, 1fr) auto auto;
+      gap: .75rem;
+      align-items: center;
+      border: 1px solid rgba(12, 15, 26, .08);
+      border-radius: 12px;
+      padding: .7rem .8rem;
+      background: rgba(255, 255, 255, .68);
+    }
+
+    .aura-admin-field-name {
+      font-size: .78rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .aura-admin-field-group {
+      margin-top: .5rem;
+      font-size: .62rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+
+    .aura-admin-field-check {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      font-size: .7rem;
+      color: var(--muted);
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .aura-admin-field-check input {
+      accent-color: var(--gold);
+    }
+
+    @media (max-width: 767px) {
+      .product-grid.aura-enhanced-products {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: .78rem;
+      }
+
+      .aura-enhanced-products .prod-card:not(.promo-card) .prod-body {
+        padding: .72rem;
+      }
+
+      .aura-enhanced-products .prod-card:not(.promo-card) .prod-name {
+        font-size: .92rem;
+      }
+
+      .aura-enhanced-products .prod-card:not(.promo-card) .prod-atc {
+        min-height: 36px;
+        font-size: .58rem;
+      }
+
+      .aura-stock-alert {
+        font-size: .58rem;
+      }
+
+      .aura-added-cart-bar {
+        bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+        width: calc(100vw - 18px);
+        grid-template-columns: 52px minmax(0, 1fr) 32px;
+        padding: .62rem;
+      }
+
+      .aura-added-thumb {
+        width: 52px;
+        height: 52px;
+      }
+
+      .aura-checkout-panel {
+        width: 100vw;
+      }
+
+      .aura-checkout-head {
+        padding: .9rem 1rem .78rem;
+      }
+
+      .aura-checkout-scroll {
+        padding: .85rem .85rem calc(1rem + env(safe-area-inset-bottom, 0px));
+      }
+
+      .aura-step {
+        font-size: .58rem;
+        gap: .28rem;
+      }
+
+      .aura-step-mark {
+        width: 22px;
+        height: 22px;
+      }
+
+      .aura-checkout-form.two,
+      .aura-choice-grid,
+      .aura-zone-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .aura-checkout-actions {
+        position: sticky;
+        bottom: 0;
+        background: linear-gradient(180deg, rgba(248, 246, 241, 0), rgba(248, 246, 241, .98) 24%);
+        padding-top: 1rem;
+      }
+
+      .aura-btn-primary,
+      .aura-btn-secondary {
+        min-height: 46px;
+      }
+
+      .aura-admin-field-row {
+        grid-template-columns: 1fr;
+        gap: .45rem;
+      }
+    }
+
+    /* REDISEÑO FONDO PREMIUM AZUL TEXTURIZADO */
+    body {
+      background:
+        radial-gradient(circle at 22% 8%, rgba(31, 65, 120, .22), transparent 34%),
+        linear-gradient(180deg, #050B1F 0%, #071530 46%, #040B1B 100%);
+    }
+
+    #s-store {
+      isolation: isolate;
+      background:
+        radial-gradient(circle at 28% 14%, rgba(31, 65, 120, .28), transparent 34%),
+        radial-gradient(circle at 72% 82%, rgba(5, 18, 45, .82), transparent 46%),
+        linear-gradient(180deg, #061126 0%, #08172F 45%, #040B1B 100%) !important;
+      color: #F8F3EA;
+    }
+
+    #s-store::before,
+    #s-store::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    #s-store::before {
+      background:
+        radial-gradient(circle at 30% 20%, rgba(31, 65, 120, .22), transparent 35%),
+        radial-gradient(circle at 70% 80%, rgba(5, 18, 45, .64), transparent 45%);
+    }
+
+    #s-store::after {
+      opacity: .13;
+      background-image:
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, .035) 0px, rgba(255, 255, 255, .035) 1px, transparent 1px, transparent 4px),
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, .025) 0px, rgba(255, 255, 255, .025) 1px, transparent 1px, transparent 5px);
+      mix-blend-mode: soft-light;
+    }
+
+    #s-store .store-nav,
+    #s-store .store-body,
+    #s-store .product-grid,
+    #s-store .filter-bar,
+    #s-store .store-section,
+    #s-store #store-products-label {
+      position: relative;
+      z-index: 1;
+    }
+
+    #s-store .store-body {
+      background: transparent !important;
+      padding-top: 1.25rem;
+      padding-bottom: 3rem;
+    }
+
+    #s-store #store-products-label {
+      color: #F8F3EA !important;
+      text-shadow: 0 2px 12px rgba(0, 0, 0, .35);
+      margin: 1rem 0 1.05rem;
+    }
+
+    #s-store .filter-bar {
+      gap: .7rem;
+      margin-bottom: 1rem;
+    }
+
+    #s-store .chip {
+      background: rgba(255, 255, 255, .92);
+      color: #1B2A44;
+      border: 1px solid rgba(214, 182, 106, .28);
+      box-shadow: 0 8px 22px rgba(0, 0, 0, .14);
+    }
+
+    #s-store .chip.active {
+      background: #111D33;
+      color: #fff;
+      border-color: rgba(214, 182, 106, .55);
+    }
+
+    #s-store .chip[data-cat="promos"].active,
+    #s-store .chip.promo.active {
+      background: linear-gradient(135deg, #D6B66A, #B9933B);
+      color: #111827;
+    }
+
+    #s-store .search-input {
+      background: #FFFCF6;
+      color: #101B31;
+      border: 1px solid rgba(214, 182, 106, .42);
+      box-shadow: 0 8px 22px rgba(0, 0, 0, .14);
+    }
+
+    #s-store .search-input::placeholder {
+      color: #7A8494;
+    }
+
+    #s-store .product-grid {
+      gap: 1.45rem;
+    }
+
+    #s-store .aura-enhanced-products .prod-card:not(.promo-card),
+    #s-store .prod-card:not(.promo-card) {
+      background: linear-gradient(180deg, #fffdf8 0%, #f7efe2 100%) !important;
+      border: 1px solid rgba(214, 182, 106, .32) !important;
+      border-radius: 20px !important;
+      box-shadow: 0 18px 45px rgba(0, 0, 0, .32) !important;
+      overflow: hidden;
+    }
+
+    #s-store .prod-card:not(.promo-card):hover {
+      transform: translateY(-4px);
+      box-shadow: 0 24px 58px rgba(0, 0, 0, .38) !important;
+    }
+
+    #s-store .prod-thumb {
+      background: #F8F3EA !important;
+      border-bottom: 1px solid rgba(214, 182, 106, .2);
+    }
+
+    #s-store .prod-cat {
+      color: #B9933B !important;
+    }
+
+    #s-store .prod-name,
+    #s-store .prod-price {
+      color: #101B31 !important;
+    }
+
+    #s-store .prod-size {
+      color: #697386 !important;
+    }
+
+    #s-store .prod-atc {
+      background: linear-gradient(135deg, #101B31 0%, #17243E 100%) !important;
+      color: #fff !important;
+      border: 1px solid rgba(214, 182, 106, .34) !important;
+      box-shadow: 0 8px 20px rgba(8, 12, 34, .22);
+    }
+
+    #s-store .prod-atc:hover {
+      background: linear-gradient(135deg, #17243E 0%, #223455 100%) !important;
+      box-shadow: 0 10px 26px rgba(214, 182, 106, .18);
+    }
+
+    #s-store .prod-badge,
+    #s-store .promo-tag {
+      background: #111D33 !important;
+      color: #D6B66A !important;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, .22);
+    }
+
+    #s-store .aura-stock-alert {
+      color: #8A610E;
+      background: rgba(214, 182, 106, .16);
+      border-color: rgba(214, 182, 106, .3);
+    }
+
+    .aura-checkout-panel .qty-btn {
+      background: #101B31 !important;
+      color: #fff !important;
+      border: 1px solid rgba(214, 182, 106, .5) !important;
+      box-shadow: 0 7px 16px rgba(16, 27, 49, .22);
+      font-weight: 900;
+    }
+
+    .aura-checkout-panel .qty-btn:hover {
+      background: #223455 !important;
+      border-color: rgba(214, 182, 106, .72) !important;
+    }
+
+    @media (max-width: 767px) {
+      #s-store .store-body {
+        padding-left: .85rem;
+        padding-right: .85rem;
+      }
+
+      #s-store .product-grid {
+        gap: .9rem;
+      }
+
+      #s-store .search-wrap,
+      #s-store .search-input {
+        width: 100% !important;
+      }
+    }
+
+    @media (max-width: 359px) {
+      .product-grid.aura-enhanced-products {
+        grid-template-columns: 1fr !important;
+      }
+    }
+
+    /* AJUSTE FINAL - FONDO AZUL PREMIUM DEL CATALOGO */
+    html,
+    body {
+      background: #050B1F !important;
+    }
+
+    #s-store,
+    #s-store.screen,
+    #s-store.screen.active {
+      background:
+        radial-gradient(circle at 25% 8%, rgba(35, 76, 140, .28), transparent 32%),
+        radial-gradient(circle at 76% 72%, rgba(2, 8, 26, .82), transparent 48%),
+        linear-gradient(180deg, #050B1F 0%, #071530 48%, #040B1B 100%) !important;
+    }
+
+    #s-store .store-body {
+      position: relative;
+      isolation: isolate;
+      max-width: none !important;
+      margin: 0 !important;
+      padding-left: max(2rem, calc((100vw - 1200px) / 2 + 2rem)) !important;
+      padding-right: max(2rem, calc((100vw - 1200px) / 2 + 2rem)) !important;
+      background:
+        radial-gradient(circle at 30% 2%, rgba(42, 84, 150, .26), transparent 34%),
+        radial-gradient(circle at 82% 72%, rgba(1, 7, 24, .72), transparent 46%),
+        linear-gradient(180deg, #061126 0%, #08172F 44%, #040B1B 100%) !important;
+      overflow: hidden;
+    }
+
+    #s-store .store-body::before,
+    #s-store .store-body::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    #s-store .store-body::before {
+      background-image:
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, .035) 0, rgba(255, 255, 255, .035) 1px, transparent 1px, transparent 4px),
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, .024) 0, rgba(255, 255, 255, .024) 1px, transparent 1px, transparent 5px);
+      opacity: .13;
+      mix-blend-mode: soft-light;
+    }
+
+    #s-store .store-body::after {
+      background: linear-gradient(115deg, transparent 0%, rgba(214, 182, 106, .045) 44%, transparent 62%);
+      opacity: .7;
+    }
+
+    #s-store .store-body > * {
+      position: relative;
+      z-index: 1;
+      max-width: 1200px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    #s-store .filter-bar,
+    #s-store .product-grid,
+    #s-store #store-products-label,
+    #s-store .aura-store-banner {
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (max-width: 767px) {
+      #s-store .store-body {
+        padding-left: .85rem !important;
+        padding-right: .85rem !important;
+      }
+    }
   </style>
 </head>
 
@@ -8583,8 +9393,8 @@ renderConfigWAPreview();
       try {
         if (key === 'products') {
           const raw = LS.get('products');
-          if (Array.isArray(raw)) {
-            // Merge Firestore data with locally-stored images
+          if (Array.isArray(raw) && shouldTrustRemoteProducts(raw)) {
+            // Merge remote data with locally-stored images
             const localImgs = safeGetLocalImages();
             PRODUCTS = raw.map(p => ({
               ...p,
@@ -8642,7 +9452,56 @@ renderConfigWAPreview();
       const syncKeys = ['products', 'taxonomy', 'store', 'orders', 'customers', 'nosotros', 'heatmap', 'promos'];
       const baseSet = LS.set.bind(LS);
       const timers = {};
+      const SYNC_BUILD = 'rtdb-sync-2026-05-01-2031';
+      function hasLocalSyncKey(key) { return localStorage.getItem('aura_' + key) !== null; }
+      function isDefaultProductsList(list) {
+        return Array.isArray(list)
+          && Array.isArray(DEFAULT_PRODUCTS)
+          && list.length === DEFAULT_PRODUCTS.length
+          && list.every((p, idx) => p && DEFAULT_PRODUCTS[idx] && p.id === DEFAULT_PRODUCTS[idx].id);
+      }
+      function shouldTrustRemoteProducts(remote) {
+        if (!Array.isArray(remote)) return false;
+        const local = LS.get('products');
+        if (Array.isArray(local) && local.length > remote.length && isDefaultProductsList(remote)) {
+          setSyncStatus('error', 'Firebase tiene el catálogo default de 8 productos; se protege el catálogo local de ' + local.length, true);
+          return false;
+        }
+        return true;
+      }
+      window.__auraSyncBuild = SYNC_BUILD;
+      if (new URLSearchParams(location.search).has('syncdebug')) localStorage.setItem('aura_sync_debug', '1');
       window.__syncClientId = window.__syncClientId || `aura-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+      function setSyncStatus(state, message, alwaysShow) {
+        window.__auraSyncStatus = { state, message, build: SYNC_BUILD, at: new Date().toISOString() };
+        console.log(`AURA SYNC [${state}] ${message}`);
+        if (!alwaysShow && state !== 'error' && !localStorage.getItem('aura_sync_debug')) return;
+        let badge = document.getElementById('aura-sync-status');
+        if (!badge) {
+          badge = document.createElement('div');
+          badge.id = 'aura-sync-status';
+          badge.style.cssText = 'position:fixed;left:10px;bottom:10px;z-index:999999;padding:8px 10px;border-radius:10px;font:12px/1.25 system-ui,-apple-system,Segoe UI,sans-serif;color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.24);max-width:310px;pointer-events:none';
+          document.body.appendChild(badge);
+        }
+        badge.style.background = state === 'error' ? '#b42318' : state === 'ready' ? '#067647' : '#344054';
+        badge.textContent = `AURA Sync ${state}: ${message}`;
+      }
+
+      window.AuraSyncDoctor = {
+        build: SYNC_BUILD,
+        enableDebug() { localStorage.setItem('aura_sync_debug', '1'); setSyncStatus('debug', 'debug visible activado', true); },
+        disableDebug() { localStorage.removeItem('aura_sync_debug'); document.getElementById('aura-sync-status')?.remove(); },
+        status() { return window.__auraSyncStatus || null; },
+        async ping() {
+          const payload = { at: new Date().toISOString(), client: window.__syncClientId, build: SYNC_BUILD };
+          if (!rtdb) throw new Error('Realtime Database SDK no disponible');
+          await rtdb.ref('aura_sync/__ping').set(payload);
+          const snap = await rtdb.ref('aura_sync/__ping').once('value');
+          return snap.val();
+        }
+      };
+      setSyncStatus('init', rtdb ? `Realtime Database activo (${SYNC_BUILD})` : 'Realtime Database SDK no disponible', !!localStorage.getItem('aura_sync_debug'));
 
       function safeClone(v) { return JSON.parse(JSON.stringify(v)); }
       function safeGetLocalImages() {
@@ -8705,7 +9564,7 @@ renderConfigWAPreview();
           target.ref.on('value', snap => {
             if (!snap.exists()) return;
             callback(snap.val() ? snap.val().value : null);
-          }, err => console.log('SYNC LISTEN ERROR ->', key, err.message));
+          }, err => setSyncStatus('error', 'listener ' + key + ': ' + err.message, true));
           return;
         }
         target.ref.onSnapshot(doc => {
@@ -8744,9 +9603,9 @@ renderConfigWAPreview();
           }
           await writeRemoteKey(key, value);
           window.__syncReady = true;
-          console.log('SYNC OK ->', key);
+          setSyncStatus('ready', 'guardado ' + key + ' en Realtime Database', false);
         } catch (err) {
-          console.log('SYNC ERROR ->', key, err.message);
+          setSyncStatus('error', key + ': ' + err.message, true);
         }
       }
 
@@ -8799,12 +9658,12 @@ renderConfigWAPreview();
       async function bootstrapSync() {
         try {
           const localFallbacks = {
-            products: PRODUCTS,
-            taxonomy: TAXONOMY,
-            store: STORE,
-            orders: ORDERS,
-            customers: CUSTOMERS,
-            heatmap: HEATMAP,
+            products: hasLocalSyncKey('products') ? PRODUCTS : null,
+            taxonomy: hasLocalSyncKey('taxonomy') ? TAXONOMY : null,
+            store: hasLocalSyncKey('store') ? STORE : null,
+            orders: hasLocalSyncKey('orders') ? ORDERS : null,
+            customers: hasLocalSyncKey('customers') ? CUSTOMERS : null,
+            heatmap: hasLocalSyncKey('heatmap') ? HEATMAP : null,
             nosotros: (function () {
               try { return JSON.parse(localStorage.getItem('aura_nosotros') || 'null') || null } catch (e) { return null }
             })(),
@@ -8815,7 +9674,11 @@ renderConfigWAPreview();
           for (const key of syncKeys) {
             const remoteSnap = await readRemoteKey(key);
             if (remoteSnap.exists && typeof remoteSnap.value !== 'undefined') {
-              baseSet(key, remoteSnap.value);
+              if (key === 'products' && !shouldTrustRemoteProducts(remoteSnap.value)) {
+                await pushKey('products');
+              } else {
+                baseSet(key, remoteSnap.value);
+              }
             } else if (localFallbacks[key] != null) {
               baseSet(key, localFallbacks[key]);
               await pushKey(key);
@@ -8825,6 +9688,10 @@ renderConfigWAPreview();
               const local = LS.get(key);
               if (JSON.stringify(remote) !== JSON.stringify(local)) {
                 // For products: re-attach local images before saving (Storage/remote sync keeps URLs)
+                if (key === 'products' && !shouldTrustRemoteProducts(remote)) {
+                  pushKey('products');
+                  return;
+                }
                 if (key === 'products' && Array.isArray(remote)) {
                   const imgMap = safeGetLocalImages();
                   const merged = remote.map(p => ({
@@ -8850,9 +9717,9 @@ renderConfigWAPreview();
           rerenderSyncedKey('nosotros');
           rerenderSyncedKey('promos');
           window.__syncReady = true;
-          console.log('SYNC READY');
+          setSyncStatus('ready', 'escuchando ' + syncKeys.length + ' claves en Realtime Database', !!localStorage.getItem('aura_sync_debug'));
         } catch (err) {
-          console.log('SYNC BOOTSTRAP ERROR', err.message);
+          setSyncStatus('error', 'bootstrap: ' + err.message, true);
         }
       }
 
@@ -9748,63 +10615,7 @@ const SugCenter = (() => {
     </div>
   </div>
 
-  <style>
-    .promo-cover-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
-    .promo-cover-card{background:var(--card);border-radius:16px;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.08);cursor:pointer;transition:transform .22s ease,box-shadow .22s ease;border:1px solid rgba(12,15,26,.08)}
-    .promo-cover-card:hover{transform:scale(1.02);box-shadow:0 12px 30px rgba(0,0,0,.12)}
-    .promo-cover-media{position:relative;height:190px;background:linear-gradient(135deg,#0f1737,#1b295d);display:flex;align-items:center;justify-content:center;overflow:hidden}
-    .promo-cover-media img{width:100%;height:100%;object-fit:cover}
-    .promo-cover-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:3.5rem;color:#fff;background:radial-gradient(circle at 30% 20%,rgba(214,182,106,.45),transparent 35%),linear-gradient(135deg,#0b1023,#14204e)}
-    .promo-cover-status{position:absolute;top:.65rem;right:.65rem;padding:.3rem .65rem;border-radius:99px;font-size:.62rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
-    .promo-cover-status.activa{background:linear-gradient(135deg,#E2C987,#B9933B);color:#1a1200}
-    .promo-cover-status.agotada{background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.25)}
-    .promo-cover-body{padding:1rem .95rem 1rem}
-    .promo-cover-name{font-family:'Cormorant Garamond',serif;font-size:1.45rem;color:var(--text);line-height:1;margin-bottom:.35rem}
-    .promo-cover-note{font-size:.77rem;color:var(--muted);min-height:2.3em;line-height:1.45;margin-bottom:.8rem}
-    .promo-cover-price{display:flex;align-items:center;justify-content:space-between;gap:.75rem;font-size:.78rem}
-    .promo-cover-price strong{font-size:1rem;color:var(--gold2)}
-    .promo-detail-list{display:grid;gap:.65rem}
-    .promo-detail-box{background:#f8fafc;border:1px solid var(--border);border-radius:12px;padding:.85rem .9rem}
-    .promo-detail-label{font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:.35rem;font-weight:700}
-    .promo-detail-tierchips{display:flex;flex-wrap:wrap;gap:.45rem}
-    .promo-detail-tier{padding:.45rem .7rem;border-radius:99px;background:#0f1737;color:#fff;font-size:.72rem;font-weight:700}
-    .promo-detail-products{display:flex;flex-wrap:wrap;gap:.45rem}
-    .promo-detail-prod{padding:.42rem .7rem;border-radius:99px;background:rgba(185,147,59,.12);color:#5a430a;font-size:.72rem;font-weight:700;border:1px solid rgba(185,147,59,.22)}
-    .promo-detail-empty{font-size:.78rem;color:var(--muted)}
-    .promo-modal.higher-detail{max-width:720px;background:#fff;color:var(--text)}
-    .promo-modal.higher-detail .promo-modal-hdr{background:linear-gradient(135deg,#0f1737,#15265d)}
-    .promo-modal.higher-detail .promo-modal-title{color:#fff}
-    .promo-modal.higher-detail .promo-modal-body{background:#fff;max-height:62vh;overflow:auto}
-    .promo-modal.higher-detail .promo-modal-ftr{background:#fff;border-top:1px solid var(--border)}
-    .promo-modal.higher-detail .promo-modal-x{color:rgba(255,255,255,.72)}
-    .prod-promo-btn{display:inline-flex;align-items:center;gap:.28rem;padding:.22rem .55rem;font-size:.62rem;font-weight:600;letter-spacing:.03em;color:#C9A84C;background:transparent;border:1px solid rgba(201,168,76,.35);border-radius:99px;cursor:pointer;transition:border-color .2s, background .2s;white-space:nowrap;width:auto;align-self:flex-start}
-    .prod-promo-btn:hover{background:rgba(201,168,76,.08);border-color:rgba(201,168,76,.6)}
-    .prod-promo-btn .promo-btn-icon{font-size:.65rem;opacity:.75}
-    .detail-promos-wrap{margin-top:1rem}
-    .detail-promo-item{padding:.7rem .8rem;border:1px solid var(--border);border-radius:12px;background:#fff;margin-bottom:.55rem}
-    .detail-promo-name{font-size:.8rem;font-weight:700;color:var(--text);margin-bottom:.25rem}
-    .detail-promo-tiers{font-size:.74rem;color:var(--muted);line-height:1.45}
-    .promo-assign-overlay{position:fixed;inset:0;background:rgba(4,7,26,.6);display:none;align-items:center;justify-content:center;z-index:3100;padding:1rem}
-    .promo-assign-overlay.active{display:flex}
-    .promo-assign-modal{width:min(520px,96vw);background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.35)}
-    .promo-assign-hdr{background:linear-gradient(135deg,#0f1737,#15265d);padding:1rem 1.1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
-    .promo-assign-title{color:#fff;font-size:1.5rem}
-    .promo-assign-x{border:none;background:none;color:rgba(255,255,255,.8);font-size:1.15rem}
-    .promo-assign-body{padding:1rem;display:grid;gap:.7rem;max-height:60vh;overflow:auto}
-    .promo-assign-row{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;padding:.85rem .9rem;border:1px solid var(--border);border-radius:14px;background:#fff}
-    .promo-assign-row-main{flex:1}
-    .promo-assign-row-name{font-size:.82rem;font-weight:700;color:var(--text);margin-bottom:.18rem}
-    .promo-assign-row-sub{font-size:.72rem;color:var(--muted);line-height:1.45}
-    .promo-assign-ftr{padding:1rem;border-top:1px solid var(--border);display:flex;justify-content:flex-end;background:#fff}
-    .promo-inline-box{margin-top:1rem;padding:1rem;border:1px solid var(--border);border-radius:14px;background:#fbfcfe}
-    .promo-inline-grid{display:grid;gap:.6rem;margin-top:.8rem}
-    .promo-inline-row{display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem;padding:.7rem .75rem;border:1px solid var(--border);border-radius:12px;background:#fff}
-    .promo-inline-meta{font-size:.73rem;color:var(--muted);line-height:1.4}
-    .promo-admin-count{font-size:.72rem;color:var(--muted);margin-top:.22rem}
-    .promo-admin-count a{color:var(--gold2);text-decoration:none;font-weight:700}
-    @media(min-width:900px){.promo-cover-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
-    @media(max-width:480px){.promo-cover-media{height:150px}.promo-cover-body{padding:.85rem}.prod-promo-btn{padding:.22rem .5rem;font-size:.62rem}}
-  </style>
+
 
   <script>
   (function(){
@@ -10272,176 +11083,7 @@ const SugCenter = (() => {
   <div id="add-toast" class="add-toast" aria-live="polite"></div>
 
 
-  <style>
-    .prod-promo-badge-img{
-      position:absolute;
-      top:.55rem;
-      left:.55rem;
-      z-index:4;
-      display:inline-flex;
-      align-items:center;
-      gap:.35rem;
-      max-width:calc(100% - 1.1rem);
-      padding:.34rem .62rem;
-      border-radius:999px;
-      background:rgba(8,12,34,.82);
-      color:var(--gold);
-      border:1px solid rgba(214,182,106,.42);
-      box-shadow:0 8px 22px rgba(0,0,0,.18);
-      backdrop-filter:blur(8px);
-      -webkit-backdrop-filter:blur(8px);
-      font-size:.60rem;
-      font-weight:800;
-      letter-spacing:.07em;
-      text-transform:uppercase;
-      line-height:1;
-      pointer-events:none;
-    }
-    .prod-promo-badge-img .promo-badge-count{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      min-width:1rem;
-      height:1rem;
-      padding:0 .24rem;
-      border-radius:999px;
-      background:linear-gradient(135deg,#E2C987,#B9933B);
-      color:#1a1200;
-      font-size:.56rem;
-      font-weight:900;
-    }
-    .prod-footer .prod-promo-btn{
-      flex:0 0 auto;
-      height:42px;
-      padding:0 .82rem;
-      border:none;
-      border-radius:12px;
-      background:rgba(12,15,26,.06);
-      color:var(--gold2);
-      font-size:.68rem;
-      font-weight:700;
-      letter-spacing:.03em;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:.38rem;
-      transition:background .2s ease,color .2s ease,transform .2s ease;
-    }
-    .prod-footer .prod-promo-btn:hover{
-      background:rgba(12,15,26,.1);
-      color:#8c6b1f;
-      transform:translateY(-1px);
-    }
-    .prod-footer{
-      display:flex;
-      align-items:center;
-      gap:.5rem;
-      flex-wrap:wrap;
-    }
-    .prod-footer .prod-price{
-      margin-right:auto;
-    }
-    .cart-discount-row{
-      background:rgba(16,185,129,.08);
-      border:1px solid rgba(16,185,129,.18);
-      border-radius:10px;
-      padding:.6rem .72rem;
-      margin:.35rem 0;
-    }
-    .cart-discount-meta{
-      display:block;
-      font-size:.69rem;
-      color:#0b8f62;
-      margin-top:.12rem;
-      font-weight:600;
-    }
-    @media (max-width:480px){
-      .prod-promo-badge-img{
-        top:.45rem;
-        left:.45rem;
-        font-size:.56rem;
-        padding:.30rem .56rem;
-      }
-      .prod-footer .prod-promo-btn{
-        width:100%;
-        order:3;
-      }
-      .prod-footer .prod-atc{
-        flex:1 1 auto;
-      }
-    }
 
-    .cart-promo-progress {
-      background: rgba(16,185,129,.07);
-      border: 1px solid rgba(16,185,129,.22);
-      border-radius: 10px;
-      padding: .7rem .9rem;
-      margin-bottom: .55rem;
-      font-size: .74rem;
-      font-family: inherit;
-    }
-    .cart-promo-progress .promo-progress-label {
-      color: #0d6e4f;
-      font-weight: 700;
-      margin-bottom: .35rem;
-      line-height: 1.35;
-    }
-    .cart-promo-progress .promo-progress-sub {
-      color: #64748b;
-      font-size: .68rem;
-      margin-top: .15rem;
-    }
-    .promo-progress-bar {
-      height: 6px;
-      background: rgba(16,185,129,.15);
-      border-radius: 99px;
-      margin-top: .5rem;
-      overflow: hidden;
-    }
-    .promo-progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #10B981, #34d399);
-      border-radius: 99px;
-      transition: width .4s ease;
-    }
-    .cart-promo-active-line {
-      background: rgba(16,185,129,.1);
-      border: 1px solid rgba(16,185,129,.28);
-      border-radius: 10px;
-      padding: .55rem .9rem;
-      margin-bottom: .45rem;
-      font-size: .74rem;
-      font-weight: 600;
-      color: #0a6644;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: .5rem;
-    }
-    .cart-subtotal-original {
-      text-decoration: line-through;
-      color: #94a3b8;
-      font-size: .81rem;
-      margin-right: .35rem;
-    }
-    .cart-subtotal-discount {
-      color: #10B981;
-      font-weight: 700;
-    }
-    .ci-promo-tag {
-      display: inline-block;
-      background: rgba(16,185,129,.1);
-      color: #0a6644;
-      border: 1px solid rgba(16,185,129,.25);
-      border-radius: 99px;
-      font-size: .60rem;
-      font-weight: 700;
-      padding: .18rem .55rem;
-      letter-spacing: .04em;
-      margin: .22rem 0 .1rem;
-    }
-
-  </style>
 
   <script>
     (function(){
@@ -10795,6 +11437,839 @@ const SugCenter = (() => {
       const readySequence = Promise.all([whenWindowLoaded(), imagesReady, minDelay()]);
 
       Promise.race([readySequence, maxDelay()]).then(hideSplash);
+    })();
+  </script>
+
+
+
+  <script>
+    (function () {
+      const COUPONS = { AURA10: 10, AURA15: 15 };
+      const STORAGE_KEY = 'aura_checkout_state_v1';
+      const FIELD_CONFIG_KEY = 'aura_checkout_field_config';
+      const DEFAULT_FIELD_CONFIG = {
+        name: { label: 'Nombre', group: 'Datos personales', enabled: true, required: true },
+        phone: { label: 'Telefono', group: 'Datos personales', enabled: true, required: true },
+        email: { label: 'Email', group: 'Datos personales', enabled: false, required: false },
+        postalCode: { label: 'Codigo postal', group: 'Entrega', enabled: true, required: false },
+        locality: { label: 'Localidad', group: 'Entrega', enabled: true, required: false },
+        address: { label: 'Direccion', group: 'Entrega', enabled: true, required: false },
+        notes: { label: 'Aclaraciones del pedido', group: 'Entrega', enabled: true, required: false },
+        deliveryMethod: { label: 'Metodo de entrega: Retiro / Envio', group: 'Entrega', enabled: true, required: true },
+        marketingOptIn: { label: 'Quiero recibir ofertas y novedades por e-mail', group: 'Marketing', enabled: false, required: false },
+        coupon: { label: 'Mostrar cupon de descuento', group: 'Cupon', enabled: true, required: false },
+        paymentMethod: { label: 'Seleccion de metodo de pago', group: 'Pago', enabled: true, required: true }
+      };
+      let addedBarTimer = null;
+      let checkoutStep = 0;
+      let checkoutState = loadCheckoutState();
+      let checkoutFieldConfig = loadCheckoutFieldConfig();
+
+      function money(value) {
+        return '$' + Number(value || 0).toLocaleString('es-AR');
+      }
+
+      function auraEscape(value) {
+        return String(value ?? '').replace(/[&<>"']/g, ch => ({
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[ch]));
+      }
+
+      function firstImage(product) {
+        return Array.isArray(product?.images) && product.images.length ? product.images[0] : '';
+      }
+
+      function renderProductPaymentInfo(product) {
+        const stock = Number(product.stock ?? 0);
+        return stock === 1
+          ? '<div class="aura-stock-alert">&#161;No te lo pierdas, es el &uacute;ltimo!</div>'
+          : (stock > 1 && stock <= 3 ? `<div class="aura-stock-alert">&#161;Solo quedan ${stock} en stock!</div>` : '');
+      }
+
+      function enhanceProductCards() {
+        const grid = document.getElementById('product-grid');
+        if (!grid || !Array.isArray(PRODUCTS)) return;
+        grid.classList.add('aura-enhanced-products');
+        grid.querySelectorAll('.prod-card:not(.promo-card)').forEach(card => {
+          const heart = card.querySelector('.prod-heart[data-pid]');
+          const productId = heart?.dataset?.pid || '';
+          const product = PRODUCTS.find(p => p.id === productId);
+          if (!product) return;
+          card.querySelectorAll('.aura-product-pay-info,.aura-stock-alert').forEach(el => el.remove());
+          const priceEl = card.querySelector('.prod-price');
+          const addBtn = card.querySelector('.prod-atc');
+          if (priceEl) {
+            priceEl.textContent = money(product.price);
+            priceEl.insertAdjacentHTML('afterend', renderProductPaymentInfo(product));
+          }
+          if (addBtn) {
+            addBtn.textContent = 'Comprar';
+            addBtn.setAttribute('aria-label', 'Comprar ' + product.name);
+          }
+        });
+      }
+
+      function ensureAddedCartBar() {
+        let bar = document.getElementById('aura-added-cart-bar');
+        if (bar) return bar;
+        bar = document.createElement('div');
+        bar.id = 'aura-added-cart-bar';
+        bar.className = 'aura-added-cart-bar';
+        bar.setAttribute('aria-live', 'polite');
+        document.body.appendChild(bar);
+        return bar;
+      }
+
+      function showAddedToCartBar(product, qty) {
+        const bar = ensureAddedCartBar();
+        const image = firstImage(product);
+        const name = product?.name || 'Producto';
+        const price = Number(product?.price || 0);
+        bar.innerHTML = `
+          <div class="aura-added-thumb">${image ? `<img src="${auraEscape(image)}" alt="${auraEscape(name)}">` : auraEscape(product?.emoji || 'A')}</div>
+          <div>
+            <div class="aura-added-name">${auraEscape(name)}</div>
+            <div class="aura-added-meta">${Number(qty || 1)} x ${money(price)}</div>
+            <div class="aura-added-strong">&#161;Agregado al carrito!</div>
+          </div>
+          <button class="aura-added-close" type="button" aria-label="Cerrar" onclick="hideAddedToCartBar()">&#215;</button>`;
+        bar.classList.remove('show');
+        void bar.offsetWidth;
+        bar.classList.add('show');
+        clearTimeout(addedBarTimer);
+        addedBarTimer = setTimeout(hideAddedToCartBar, 3600);
+      }
+
+      function hideAddedToCartBar() {
+        document.getElementById('aura-added-cart-bar')?.classList.remove('show');
+      }
+
+      function defaultCheckoutState() {
+        return {
+          detailsOpen: false,
+          couponOpen: false,
+          couponCode: '',
+          couponPercent: 0,
+          couponError: '',
+          email: '',
+          wantsNews: false,
+          name: '',
+          phone: '',
+          deliveryType: 'retiro',
+          postalCode: '',
+          locality: '',
+          address: '',
+          notes: '',
+          zoneId: '',
+          paymentMethod: 'transferencia'
+        };
+      }
+
+      function loadCheckoutState() {
+        try {
+          return { ...defaultCheckoutState(), ...(JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') || {}) };
+        } catch (e) {
+          return defaultCheckoutState();
+        }
+      }
+
+      function saveCheckoutState() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(checkoutState));
+      }
+
+      function normalizeCheckoutFieldConfig(config) {
+        const normalized = {};
+        Object.entries(DEFAULT_FIELD_CONFIG).forEach(([key, defaults]) => {
+          const saved = config?.[key] || {};
+          normalized[key] = {
+            ...defaults,
+            enabled: saved.enabled !== undefined ? !!saved.enabled : defaults.enabled,
+            required: saved.required !== undefined ? !!saved.required : defaults.required
+          };
+          if (key === 'marketingOptIn' || key === 'coupon') normalized[key].required = false;
+        });
+        return normalized;
+      }
+
+      function loadCheckoutFieldConfig() {
+        try {
+          return normalizeCheckoutFieldConfig(JSON.parse(localStorage.getItem(FIELD_CONFIG_KEY) || '{}'));
+        } catch (e) {
+          return normalizeCheckoutFieldConfig({});
+        }
+      }
+
+      function saveCheckoutFieldConfig() {
+        localStorage.setItem(FIELD_CONFIG_KEY, JSON.stringify(checkoutFieldConfig));
+      }
+
+      function isFieldEnabled(key) {
+        return checkoutFieldConfig[key]?.enabled !== false;
+      }
+
+      function isFieldRequired(key) {
+        return isFieldEnabled(key) && checkoutFieldConfig[key]?.required === true;
+      }
+
+      function getCheckoutItems() {
+        return (typeof Cart !== 'undefined' && typeof Cart.items === 'function') ? Cart.items() : [];
+      }
+
+      function getPromoDiscounts() {
+        try {
+          if (typeof getCartActiveDiscounts === 'function') return getCartActiveDiscounts(getCheckoutItems());
+          if (window.getCartActiveDiscounts) return window.getCartActiveDiscounts(getCheckoutItems());
+        } catch (e) { }
+        return { totalDiscount: 0, discountLines: [] };
+      }
+
+      function readCartInputValue(id) {
+        return String(document.getElementById(id)?.value || '').trim();
+      }
+
+      function syncCheckoutStateFromCart() {
+        checkoutState = { ...defaultCheckoutState(), ...loadCheckoutState() };
+        const cartName = readCartInputValue('order-name');
+        const cartPhone = readCartInputValue('order-phone');
+        const cartNotes = readCartInputValue('order-notes');
+        const cartAddress = readCartInputValue('cust-addr');
+        if (cartName) checkoutState.name = cartName;
+        if (cartPhone) checkoutState.phone = cartPhone;
+        if (cartNotes) checkoutState.notes = cartNotes;
+        if (cartAddress) {
+          checkoutState.address = cartAddress;
+          checkoutState.deliveryType = 'envio';
+        }
+        saveCheckoutState();
+      }
+
+      function getCheckoutShippingZones() {
+        const zones = Array.isArray(STORE?.shippingZones) ? STORE.shippingZones : [];
+        const cleanZones = zones
+          .filter(zone => zone && zone.name)
+          .map(zone => ({
+            id: String(zone.id || zone.name).toLowerCase().replace(/\s+/g, '-'),
+            name: zone.name,
+            price: Number(zone.price || 0)
+          }));
+        return cleanZones.length ? cleanZones : [
+          { id: 'cipolletti', name: 'Cipolletti', price: 1500 },
+          { id: 'neuquen', name: 'Neuquén', price: 3000 },
+          { id: 'fernandez-oro', name: 'Fernández Oro', price: 3000 }
+        ];
+      }
+
+      function getSelectedCheckoutZone() {
+        return getCheckoutShippingZones().find(zone => zone.id === checkoutState.zoneId) || null;
+      }
+
+      function getOrderTotals() {
+        const items = getCheckoutItems();
+        const subtotal = items.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.qty || 0), 0);
+        const promo = getPromoDiscounts();
+        const promoDiscount = Number(promo.totalDiscount || 0);
+        const baseTotal = Math.max(0, subtotal - promoDiscount);
+        const cartTotal = (typeof Cart !== 'undefined' && typeof Cart.total === 'function')
+          ? Number(Cart.total() || 0)
+          : baseTotal;
+        const cartShipping = Math.max(0, cartTotal - baseTotal);
+        const selectedZone = getSelectedCheckoutZone();
+        const shipping = selectedZone ? Number(selectedZone.price || 0) : cartShipping;
+        const totalBeforeCoupon = Math.max(0, baseTotal + shipping);
+        const couponBase = Math.max(0, subtotal - promoDiscount);
+        const couponDiscount = isFieldEnabled('coupon') && checkoutState.couponPercent
+          ? Math.round(couponBase * (Number(checkoutState.couponPercent) / 100))
+          : 0;
+        const shippingLabel = selectedZone
+          ? `${selectedZone.name} - ${money(selectedZone.price)}`
+          : (shipping > 0
+            ? money(shipping)
+            : (checkoutState.deliveryType === 'retiro' ? 'Retiro coordinado por WhatsApp' : 'A coordinar por WhatsApp'));
+        return {
+          items,
+          subtotal,
+          promoDiscount,
+          promoLines: promo.discountLines || [],
+          couponDiscount,
+          shipping,
+          shippingLabel,
+          selectedZone,
+          cartTotal: totalBeforeCoupon,
+          total: Math.max(0, totalBeforeCoupon - couponDiscount)
+        };
+      }
+
+      const getCheckoutTotals = getOrderTotals;
+
+      function ensureCheckout() {
+        let overlay = document.getElementById('aura-checkout-overlay');
+        let panel = document.getElementById('aura-checkout-panel');
+        if (overlay && panel) return { overlay, panel };
+
+        overlay = document.createElement('div');
+        overlay.id = 'aura-checkout-overlay';
+        overlay.className = 'aura-checkout-overlay';
+        overlay.addEventListener('click', function (event) {
+          if (event.target === overlay) closeAuraCheckout();
+        });
+
+        panel = document.createElement('section');
+        panel.id = 'aura-checkout-panel';
+        panel.className = 'aura-checkout-panel';
+        panel.setAttribute('role', 'dialog');
+        panel.setAttribute('aria-label', 'Checkout AURA');
+
+        document.body.appendChild(overlay);
+        document.body.appendChild(panel);
+        return { overlay, panel };
+      }
+
+      function openAuraCheckout(step = 0) {
+        if (!getCheckoutItems().length) {
+          if (typeof showToast === 'function') showToast('Tu carrito esta vacio.', true);
+          return;
+        }
+        checkoutFieldConfig = loadCheckoutFieldConfig();
+        syncCheckoutStateFromCart();
+        checkoutStep = Math.max(0, Math.min(2, Number(step) || 0));
+        const { overlay, panel } = ensureCheckout();
+        renderCheckoutStep();
+        if (typeof Cart !== 'undefined' && typeof Cart.close === 'function') Cart.close();
+        overlay.classList.add('open');
+        panel.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeAuraCheckout() {
+        document.getElementById('aura-checkout-overlay')?.classList.remove('open');
+        document.getElementById('aura-checkout-panel')?.classList.remove('open');
+        document.body.style.overflow = '';
+      }
+
+      function renderStepper() {
+        const labels = ['Carrito', 'Entrega', 'Pago'];
+        return `<div class="aura-stepper">${labels.map((label, idx) => {
+          const state = idx < checkoutStep ? 'done' : (idx === checkoutStep ? 'active' : '');
+          const mark = idx < checkoutStep ? '&#10003;' : String(idx + 1);
+          return `<div class="aura-step ${state}"><span class="aura-step-mark">${mark}</span><span>${label}</span></div>`;
+        }).join('')}</div>`;
+      }
+
+      function renderCheckoutSummary() {
+        const totals = getCheckoutTotals();
+        const caret = `<svg class="aura-summary-caret ${checkoutState.detailsOpen ? 'open' : ''}" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 8l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+        const itemsHTML = checkoutState.detailsOpen ? `
+          <div class="aura-summary-body">
+            ${totals.items.map(item => {
+              const img = firstImage(item);
+              return `<div class="aura-summary-item">
+                <div class="aura-summary-thumb">${img ? `<img src="${auraEscape(img)}" alt="${auraEscape(item.name)}">` : auraEscape(item.emoji || 'A')}</div>
+                <div>
+                  <div class="aura-summary-name">${auraEscape(item.name)}</div>
+                  <div class="aura-summary-meta">${Number(item.qty || 0)} x ${money(item.price)}</div>
+                </div>
+                <div class="aura-summary-money">${money(Number(item.price || 0) * Number(item.qty || 0))}</div>
+              </div>`;
+            }).join('')}
+            <div class="aura-summary-row"><span>Subtotal</span><strong>${money(totals.subtotal)}</strong></div>
+            ${(totals.promoDiscount + totals.couponDiscount) ? `<div class="aura-summary-row discount"><span>Descuento acumulado</span><strong>- ${money(totals.promoDiscount + totals.couponDiscount)}</strong></div>` : ''}
+            <div class="aura-summary-row"><span>Envio</span><strong>${totals.shipping ? money(totals.shipping) : auraEscape(totals.shippingLabel)}</strong></div>
+            <div class="aura-summary-row total"><span>Total final</span><strong>${money(totals.total)}</strong></div>
+          </div>` : '';
+        return `<div class="aura-checkout-summary">
+          <button class="aura-summary-toggle" type="button" onclick="AuraCheckout.toggleSummary()">
+            <span>${caret} Ver detalles de mi compra</span>
+            <span class="aura-summary-total">${money(totals.total)}</span>
+          </button>
+          ${itemsHTML}
+        </div>`;
+      }
+
+      function renderCouponBlock() {
+        if (!isFieldEnabled('coupon')) return '';
+        return `<div class="aura-checkout-card">
+          <button class="aura-coupon-toggle" type="button" onclick="AuraCheckout.toggleCoupon()">Agregar cupon de descuento</button>
+          ${checkoutState.couponOpen ? `<div class="aura-coupon-row">
+            <input class="aura-input" id="aura-coupon-input" value="${auraEscape(checkoutState.couponCode || '')}" placeholder="AURA10" oninput="AuraCheckout.setField('couponCode', this.value)">
+            <button class="aura-btn-secondary" type="button" onclick="applyCheckoutCoupon()">Aplicar</button>
+          </div>` : ''}
+          <div class="aura-msg ${checkoutState.couponError ? 'error' : (checkoutState.couponPercent ? 'ok' : '')}">
+            ${checkoutState.couponError ? auraEscape(checkoutState.couponError) : (checkoutState.couponPercent ? `Cupon ${auraEscape(checkoutState.couponCode)} aplicado: ${checkoutState.couponPercent}% off.` : '')}
+          </div>
+        </div>`;
+      }
+
+      function renderCartStep() {
+        const totals = getCheckoutTotals();
+        if (!totals.items.length) return '<div class="aura-empty-checkout">Tu carrito esta vacio.</div>';
+        return `<div class="aura-checkout-card">
+          <div class="aura-checkout-card-title">Tu carrito</div>
+          <div class="aura-checkout-card-sub">Revisa productos y cantidades antes de completar los datos de entrega.</div>
+          ${totals.items.map(item => `<div class="aura-summary-item" style="margin-bottom:.6rem">
+            <div class="aura-summary-thumb">${firstImage(item) ? `<img src="${auraEscape(firstImage(item))}" alt="${auraEscape(item.name)}">` : auraEscape(item.emoji || 'A')}</div>
+            <div>
+              <div class="aura-summary-name">${auraEscape(item.name)}</div>
+              <div class="aura-summary-meta">${money(item.price)} c/u</div>
+              <div class="qty-row" style="margin-top:.42rem">
+                <button class="qty-btn" type="button" onclick="AuraCheckout.updateQty('${auraEscape(item.id)}',-1)">-</button>
+                <span class="qty-val">${Number(item.qty || 0)}</span>
+                <button class="qty-btn" type="button" onclick="AuraCheckout.updateQty('${auraEscape(item.id)}',1)">+</button>
+                <button class="ci-rm" type="button" onclick="AuraCheckout.removeItem('${auraEscape(item.id)}')">Eliminar</button>
+              </div>
+            </div>
+            <div class="aura-summary-money">${money(Number(item.price || 0) * Number(item.qty || 0))}</div>
+          </div>`).join('')}
+          <div class="aura-summary-body" style="border-top:1px solid rgba(12,15,26,.08);padding:.75rem 0 0;margin-top:.25rem">
+            <div class="aura-summary-row"><span>Subtotal</span><strong>${money(totals.subtotal)}</strong></div>
+            ${(totals.promoDiscount + totals.couponDiscount) ? `<div class="aura-summary-row discount"><span>Descuento acumulado</span><strong>- ${money(totals.promoDiscount + totals.couponDiscount)}</strong></div>` : ''}
+            <div class="aura-summary-row"><span>Envio</span><strong>${totals.shipping ? money(totals.shipping) : auraEscape(totals.shippingLabel)}</strong></div>
+            <div class="aura-summary-row total"><span>Total</span><strong>${money(totals.total)}</strong></div>
+          </div>
+          <div class="aura-checkout-actions">
+            <button class="aura-btn-secondary" type="button" onclick="closeAuraCheckout()">Seguir comprando</button>
+            <button class="aura-btn-primary" type="button" onclick="AuraCheckout.next()">Continuar</button>
+          </div>
+        </div>`;
+      }
+
+      function renderDeliveryStep() {
+        const shippingZones = getCheckoutShippingZones();
+        const contactFields = [
+          isFieldEnabled('email') ? fieldHTML('email', 'E-mail', 'email', 'tu@email.com') : '',
+          isFieldEnabled('name') ? fieldHTML('name', 'Nombre', 'text', 'Nombre y apellido') : '',
+          isFieldEnabled('phone') ? fieldHTML('phone', 'Telefono', 'tel', 'Numero de contacto') : '',
+          isFieldEnabled('marketingOptIn') ? `<label class="aura-check full"><input type="checkbox" ${checkoutState.wantsNews ? 'checked' : ''} onchange="AuraCheckout.setField('wantsNews', this.checked)"> Quiero recibir ofertas y novedades por e-mail</label>` : ''
+        ].filter(Boolean).join('');
+        const deliveryChoices = isFieldEnabled('deliveryMethod') ? `<div class="aura-choice-grid">
+            <button class="aura-choice ${checkoutState.deliveryType === 'retiro' ? 'active' : ''}" type="button" onclick="AuraCheckout.setField('deliveryType','retiro', true)"><strong>Retiro</strong><span>Retiro coordinado por WhatsApp.</span></button>
+            <button class="aura-choice ${checkoutState.deliveryType === 'envio' ? 'active' : ''}" type="button" onclick="AuraCheckout.setField('deliveryType','envio', true)"><strong>Envio</strong><span>Usa el envio calculado en el carrito o se coordina por WhatsApp.</span></button>
+          </div>` : '';
+        const zoneChoices = shippingZones.length ? `<div class="aura-field full">
+            <label class="aura-label">Selecciona tu zona</label>
+            <div class="aura-choice-grid aura-zone-grid">
+              ${shippingZones.map(zone => `<button class="aura-choice ${checkoutState.zoneId === zone.id ? 'active' : ''}" type="button" onclick="AuraCheckout.selectZone('${auraEscape(zone.id)}')"><strong>${auraEscape(zone.name)}</strong><span>${money(zone.price)}</span></button>`).join('')}
+            </div>
+          </div>` : '';
+        const deliveryFields = [
+          isFieldEnabled('postalCode') ? fieldHTML('postalCode', 'Codigo postal', 'text', 'Ej: 8300') : '',
+          isFieldEnabled('locality') ? fieldHTML('locality', 'Localidad', 'text', 'Ciudad o zona') : '',
+          isFieldEnabled('address') && (!isFieldEnabled('deliveryMethod') || checkoutState.deliveryType === 'envio') ? fieldHTML('address', 'Direccion', 'text', 'Calle, numero, piso o referencia', true) : '',
+          isFieldEnabled('notes') ? fieldHTML('notes', 'Aclaraciones del pedido', 'text', 'Aclaraciones del pedido o entrega', true) : '',
+          isFieldEnabled('deliveryMethod') && checkoutState.deliveryType === 'retiro' ? '<div class="aura-msg full">Retiro coordinado por WhatsApp.</div>' : ''
+        ].filter(Boolean).join('');
+        return `<div class="aura-checkout-card">
+          <div class="aura-checkout-card-title">Datos de contacto</div>
+          <div class="aura-checkout-card-sub">Estos datos se suman al pedido que se envia por WhatsApp.</div>
+          <div class="aura-checkout-form two">
+            ${contactFields || '<div class="aura-msg full">No hay campos de contacto activos.</div>'}
+          </div>
+        </div>
+        <div class="aura-checkout-card">
+          <div class="aura-checkout-card-title">Entrega</div>
+          ${deliveryChoices}
+          ${zoneChoices}
+          <div class="aura-checkout-form two">
+            ${deliveryFields || '<div class="aura-msg full">La entrega se coordina con los datos del carrito.</div>'}
+          </div>
+          <div class="aura-checkout-actions">
+            <button class="aura-btn-secondary" type="button" onclick="AuraCheckout.prev()">Volver</button>
+            <button class="aura-btn-primary" type="button" onclick="AuraCheckout.next()">Continuar</button>
+          </div>
+        </div>`;
+      }
+
+      function fieldHTML(key, label, type, placeholder, full) {
+        const required = isFieldRequired(key) ? ' *' : '';
+        return `<div class="aura-field ${full ? 'full' : ''}">
+          <label class="aura-label" for="aura-${key}">${label}${required}</label>
+          <input class="aura-input" id="aura-${key}" type="${type}" value="${auraEscape(checkoutState[key] || '')}" placeholder="${auraEscape(placeholder || '')}" oninput="AuraCheckout.setField('${key}', this.value)">
+        </div>`;
+      }
+
+      function renderPaymentStep() {
+        const totals = getCheckoutTotals();
+        const paymentChoices = isFieldEnabled('paymentMethod') ? `<div class="aura-choice-grid">
+            <button class="aura-choice ${checkoutState.paymentMethod === 'transferencia' ? 'active' : ''}" type="button" onclick="AuraCheckout.setField('paymentMethod','transferencia', true)"><strong>Transferencia o deposito</strong><span>Se envia el pedido para coordinar los datos de pago.</span></button>
+            <button class="aura-choice ${checkoutState.paymentMethod === 'whatsapp' ? 'active' : ''}" type="button" onclick="AuraCheckout.setField('paymentMethod','whatsapp', true)"><strong>Coordinar por WhatsApp</strong><span>Definimos pago y entrega por mensaje.</span></button>
+          </div>` : '<div class="aura-msg">El pago se coordina por WhatsApp.</div>';
+        return `<div class="aura-checkout-card">
+          <div class="aura-checkout-card-title">Pago</div>
+          <div class="aura-checkout-card-sub">No se cobra online. El pedido se finaliza por WhatsApp con el detalle completo.</div>
+          <div class="aura-payment-total"><span>Total final</span><strong>${money(totals.total)}</strong></div>
+          ${paymentChoices}
+          <div class="aura-checkout-actions">
+            <button class="aura-btn-secondary" type="button" onclick="AuraCheckout.prev()">Volver</button>
+            <button class="aura-btn-primary" type="button" onclick="AuraCheckout.finish()">Finalizar pedido por WhatsApp</button>
+          </div>
+        </div>`;
+      }
+
+      function renderCheckoutStep() {
+        const { panel } = ensureCheckout();
+        const body = checkoutStep === 0 ? renderCartStep() : (checkoutStep === 1 ? renderDeliveryStep() : renderPaymentStep());
+        panel.innerHTML = `
+          <div class="aura-checkout-head">
+            <div><div class="aura-checkout-title">Checkout AURA</div><div class="aura-checkout-sub">Carrito - Entrega - Pago</div></div>
+            <button class="aura-checkout-close" type="button" onclick="closeAuraCheckout()" aria-label="Cerrar">&#215;</button>
+          </div>
+          <div class="aura-checkout-scroll">
+            ${renderStepper()}
+            ${renderCheckoutSummary()}
+            ${renderCouponBlock()}
+            ${body}
+          </div>`;
+      }
+
+      function applyCheckoutCoupon() {
+        if (!isFieldEnabled('coupon')) return;
+        const code = String(checkoutState.couponCode || '').trim().toUpperCase();
+        checkoutState.couponCode = code;
+        if (!code) {
+          checkoutState.couponPercent = 0;
+          checkoutState.couponError = 'Ingresa un cupon para aplicar.';
+        } else if (COUPONS[code]) {
+          checkoutState.couponPercent = COUPONS[code];
+          checkoutState.couponError = '';
+          checkoutState.couponOpen = true;
+        } else {
+          checkoutState.couponPercent = 0;
+          checkoutState.couponError = 'El cupon ingresado no existe.';
+        }
+        saveCheckoutState();
+        renderCheckoutStep();
+      }
+
+      function validateDeliveryStep() {
+        if (isFieldRequired('name') && !String(checkoutState.name || '').trim()) return 'Ingresa tu nombre.';
+        if (isFieldRequired('email') && !String(checkoutState.email || '').trim()) return 'Ingresa tu e-mail.';
+        if (isFieldRequired('phone') && !String(checkoutState.phone || '').trim()) return 'Ingresa tu telefono.';
+        if (isFieldRequired('deliveryMethod') && isFieldEnabled('deliveryMethod') && !String(checkoutState.deliveryType || '').trim()) return 'Selecciona retiro o envio.';
+        if (getCheckoutShippingZones().length && (!isFieldEnabled('deliveryMethod') || checkoutState.deliveryType === 'envio') && !checkoutState.zoneId) return 'Selecciona una zona de entrega.';
+        if (isFieldRequired('postalCode') && !String(checkoutState.postalCode || '').trim()) return 'Ingresa el codigo postal.';
+        if (isFieldRequired('locality') && !String(checkoutState.locality || '').trim()) return 'Ingresa la localidad.';
+        if (isFieldEnabled('address') && checkoutState.deliveryType === 'envio' && (checkoutFieldConfig.address.required || false) && !String(checkoutState.address || '').trim()) return 'Ingresa la direccion de envio.';
+        if (isFieldRequired('notes') && !String(checkoutState.notes || '').trim()) return 'Ingresa las aclaraciones del pedido.';
+        return '';
+      }
+
+      function buildCheckoutWhatsAppMessage() {
+        const totals = getCheckoutTotals();
+        const orderId = 'PED-' + Date.now().toString().slice(-6);
+        const itemsStr = totals.items.map(item => `- ${item.name} x${item.qty} - ${money(Number(item.price || 0) * Number(item.qty || 0))}`).join('\n');
+        const promoText = totals.promoLines.map(({ promo, discount }) => `\nDescuento promo ${promo.name}: -${money(discount.saved)}`).join('');
+        const couponText = totals.couponDiscount ? `\nDescuento cupon ${checkoutState.couponCode}: -${money(totals.couponDiscount)}` : '';
+        const selectedZone = getSelectedCheckoutZone();
+        const deliveryLabel = isFieldEnabled('deliveryMethod')
+          ? (checkoutState.deliveryType === 'retiro' ? 'Retiro' : 'Envio')
+          : (selectedZone ? 'Envio' : 'A coordinar');
+        const addressParts = [
+          selectedZone ? `Zona: ${selectedZone.name}` : '',
+          isFieldEnabled('address') ? checkoutState.address : '',
+          isFieldEnabled('locality') ? checkoutState.locality : '',
+          isFieldEnabled('postalCode') ? checkoutState.postalCode : ''
+        ].filter(Boolean);
+        const address = isFieldEnabled('deliveryMethod') && checkoutState.deliveryType === 'retiro'
+          ? 'Retiro coordinado por WhatsApp'
+          : (addressParts.join(' - ') || readCartInputValue('cust-addr') || 'A coordinar');
+        const notes = [
+          isFieldEnabled('email') && checkoutState.email ? `Email: ${checkoutState.email}` : '',
+          isFieldEnabled('deliveryMethod') ? `Entrega elegida: ${deliveryLabel}` : '',
+          (isFieldEnabled('address') || isFieldEnabled('deliveryMethod')) ? `Direccion/retiro: ${address}` : '',
+          isFieldEnabled('notes') && checkoutState.notes ? `Aclaraciones: ${checkoutState.notes}` : '',
+          isFieldEnabled('paymentMethod') ? `Metodo de pago: ${checkoutState.paymentMethod === 'transferencia' ? 'Transferencia o deposito' : 'Coordinar por WhatsApp'}` : '',
+          isFieldEnabled('marketingOptIn') && checkoutState.wantsNews ? 'Acepta recibir ofertas por e-mail.' : ''
+        ].filter(Boolean).join('\n');
+        const templateData = {
+          tienda: STORE?.waName || 'AURA - Tienda Online',
+          pedido_id: orderId,
+          nombre: isFieldEnabled('name') && checkoutState.name ? checkoutState.name : 'Cliente sin nombre',
+          telefono: isFieldEnabled('phone') && checkoutState.phone ? `\nTelefono: ${checkoutState.phone}` : '',
+          productos: itemsStr,
+          subtotal: money(totals.subtotal),
+          metodo_envio: deliveryLabel,
+          envio: totals.shipping ? money(totals.shipping) : totals.shippingLabel,
+          descuentos: promoText + couponText,
+          total: money(totals.total),
+          direccion: address,
+          notas: notes ? `\nNotas checkout:\n${notes}` : ''
+        };
+        const template = typeof buildWhatsAppMessageFromTemplate === 'function'
+          ? (STORE?.waTemplate || getDefaultWATemplate())
+          : 'Pedido {tienda}\n\nPedido: {pedido_id}\nCliente: {nombre}{telefono}\n\n{productos}\n\nSubtotal: {subtotal}\nMetodo de envio: {metodo_envio}\nEnvio: {envio}{descuentos}\nTotal: {total}\n\nDireccion / zona: {direccion}{notas}';
+        const message = typeof buildWhatsAppMessageFromTemplate === 'function'
+          ? buildWhatsAppMessageFromTemplate(template, templateData)
+          : template.replace(/\{([a-z_]+)\}/gi, (full, key) => templateData[key] ?? full);
+        return { message, orderId, totals, address, deliveryLabel };
+      }
+
+      function registerCheckoutOrder(data) {
+        try {
+          if (!Array.isArray(ORDERS)) return;
+          const order = {
+            id: data.orderId,
+            customerName: isFieldEnabled('name') && checkoutState.name ? checkoutState.name : 'Cliente sin nombre',
+            phone: isFieldEnabled('phone') && checkoutState.phone ? checkoutState.phone : 'Sin telefono',
+            email: isFieldEnabled('email') ? (checkoutState.email || '') : '',
+            address: data.address || 'No especificada',
+            notes: [
+              'Checkout por pasos.',
+              isFieldEnabled('notes') && checkoutState.notes ? checkoutState.notes : '',
+              data.totals.couponDiscount ? 'Cupon ' + checkoutState.couponCode + '.' : '',
+              isFieldEnabled('marketingOptIn') && checkoutState.wantsNews ? 'Acepta novedades por email.' : ''
+            ].filter(Boolean).join(' '),
+            shippingMethod: data.deliveryLabel,
+            paymentMethod: isFieldEnabled('paymentMethod') ? checkoutState.paymentMethod : 'Coordinar por WhatsApp',
+            items: data.totals.items.map(item => ({ id: item.id, name: item.name, qty: item.qty, price: item.price, size: item.size || '35 ml - EDP' })),
+            subtotal: data.totals.subtotal,
+            delivery: data.totals.shipping,
+            discount: data.totals.promoDiscount + data.totals.couponDiscount,
+            total: data.totals.total,
+            date: new Date().toISOString(),
+            status: 'Pendiente de confirmacion',
+            channel: 'WhatsApp'
+          };
+          ORDERS.unshift(order);
+          if (typeof saveOrdersLS === 'function') saveOrdersLS();
+          if (typeof upsertCustomerFromOrder === 'function') upsertCustomerFromOrder(order);
+          if (typeof Dash !== 'undefined') {
+            Dash.renderPedidos?.();
+            Dash.renderClientes?.();
+            Dash.updatePanelKPIs?.();
+            Dash.initAnalytics?.();
+          }
+        } catch (e) {
+          console.warn('No se pudo registrar el pedido de checkout', e);
+        }
+      }
+
+      function finishCheckout() {
+        const error = validateDeliveryStep();
+        if (error) {
+          checkoutStep = 1;
+          if (typeof showToast === 'function') showToast(error, true);
+          renderCheckoutStep();
+          return;
+        }
+        const data = buildCheckoutWhatsAppMessage();
+        registerCheckoutOrder(data);
+        const waNum = STORE?.waNum || config?.waNum || '5492942444236';
+        window.open(`https://wa.me/${waNum}?text=${encodeURIComponent(data.message)}`, '_blank');
+        if (typeof Cart !== 'undefined' && typeof Cart.remove === 'function') {
+          getCheckoutItems().slice().forEach(item => Cart.remove(item.id));
+        }
+        localStorage.removeItem(STORAGE_KEY);
+        checkoutState = defaultCheckoutState();
+        closeAuraCheckout();
+      }
+
+      function renderCheckoutFieldAdmin() {
+        const panel = document.querySelector('#sec-config .config-panel[data-config-panel="pedidos"]');
+        if (!panel) return;
+        let section = document.getElementById('aura-checkout-field-config-section');
+        if (!section) {
+          section = document.createElement('div');
+          section.id = 'aura-checkout-field-config-section';
+          section.className = 'config-section';
+          const flow = panel.querySelector('.config-section:last-child');
+          panel.insertBefore(section, flow || null);
+        }
+        const grouped = {};
+        Object.entries(DEFAULT_FIELD_CONFIG).forEach(([key, meta]) => {
+          if (!grouped[meta.group]) grouped[meta.group] = [];
+          grouped[meta.group].push([key, meta]);
+        });
+        section.classList.remove('is-accordion', 'is-open');
+        section.removeAttribute('data-accordion-ready');
+        section.innerHTML = `<div class="config-section-title">Campos solicitados en el checkout</div>
+          <div class="config-hint" style="margin-bottom:.9rem">Defini que informacion ve el comprador y que campos son obligatorios. Se aplica inmediatamente al checkout.</div>
+          <div class="aura-admin-checkout-fields">
+            ${Object.entries(grouped).map(([group, rows]) => `
+              <div class="aura-admin-field-group">${auraEscape(group)}</div>
+              ${rows.map(([key, meta]) => {
+                const cfg = checkoutFieldConfig[key] || meta;
+                const canRequire = key !== 'marketingOptIn' && key !== 'coupon';
+                const help = key === 'address' ? '<div class="config-hint">Si es obligatorio, solo se exige cuando el comprador elige envio.</div>' : '';
+                return `<div class="aura-admin-field-row">
+                  <div><div class="aura-admin-field-name">${auraEscape(meta.label)}</div>${help}</div>
+                  <label class="aura-admin-field-check"><input type="checkbox" ${cfg.enabled ? 'checked' : ''} onchange="AuraCheckoutConfig.update('${key}','enabled',this.checked)"> Mostrar campo</label>
+                  <label class="aura-admin-field-check"><input type="checkbox" ${cfg.required ? 'checked' : ''} ${canRequire ? '' : 'disabled'} onchange="AuraCheckoutConfig.update('${key}','required',this.checked)"> Obligatorio</label>
+                </div>`;
+              }).join('')}
+            `).join('')}
+          </div>`;
+        if (typeof initConfigAccordions === 'function') initConfigAccordions();
+        if (typeof refreshConfigAccordionHeights === 'function') refreshConfigAccordionHeights();
+      }
+
+      function patchRenderProducts() {
+        if (typeof window.renderProducts !== 'function' || window.renderProducts.__auraCheckoutLayer) return;
+        const original = window.renderProducts;
+        const wrapped = function () {
+          const result = original.apply(this, arguments);
+          setTimeout(enhanceProductCards, 30);
+          return result;
+        };
+        wrapped.__auraCheckoutLayer = true;
+        window.renderProducts = wrapped;
+      }
+
+      function patchCartAddItem() {
+        if (typeof Cart === 'undefined' || typeof Cart.addItem !== 'function' || Cart.addItem.__auraAddedBar) return;
+        const original = Cart.addItem;
+        const wrapped = function (product) {
+          const result = original.apply(this, arguments);
+          showAddedToCartBar(product || arguments[0], 1);
+          if (document.getElementById('aura-checkout-panel')?.classList.contains('open')) {
+            syncCheckoutStateFromCart();
+            renderCheckoutStep();
+          }
+          return result;
+        };
+        wrapped.__auraAddedBar = true;
+        Cart.addItem = wrapped;
+      }
+
+      function patchCartButton() {
+        const btn = document.getElementById('btn-wa-cart');
+        if (!btn || btn.__auraCheckoutPatched) return;
+        btn.__auraCheckoutPatched = true;
+        btn.onclick = function (event) {
+          event.preventDefault();
+          openAuraCheckout();
+        };
+        btn.innerHTML = 'Continuar al checkout';
+      }
+
+      function patchCartOpen() {
+        if (typeof Cart === 'undefined' || typeof Cart.open !== 'function' || Cart.open.__auraCheckoutOnly) return;
+        const originalOpen = Cart.open;
+        const wrapped = function () {
+          if (!getCheckoutItems().length) {
+            if (typeof showToast === 'function') showToast('Tu carrito esta vacio.', true);
+            return;
+          }
+          openAuraCheckout(0);
+        };
+        wrapped.__auraCheckoutOnly = true;
+        wrapped.__originalCartOpen = originalOpen;
+        Cart.open = wrapped;
+      }
+
+      window.hideAddedToCartBar = hideAddedToCartBar;
+      window.showAddedToCartBar = showAddedToCartBar;
+      window.renderProductPaymentInfo = renderProductPaymentInfo;
+      window.openAuraCheckout = openAuraCheckout;
+      window.closeAuraCheckout = closeAuraCheckout;
+      window.renderCheckoutStep = renderCheckoutStep;
+      window.renderCheckoutSummary = renderCheckoutSummary;
+      window.applyCheckoutCoupon = applyCheckoutCoupon;
+      window.buildCheckoutWhatsAppMessage = buildCheckoutWhatsAppMessage;
+      window.getOrderTotals = getOrderTotals;
+      window.loadCheckoutFieldConfig = loadCheckoutFieldConfig;
+      window.renderCheckoutFields = renderDeliveryStep;
+      window.validateCheckoutStep = function (step) {
+        return step === 1 ? validateDeliveryStep() : '';
+      };
+      window.AuraCheckoutConfig = {
+        update(key, prop, value) {
+          checkoutFieldConfig = loadCheckoutFieldConfig();
+          if (!checkoutFieldConfig[key]) checkoutFieldConfig[key] = { ...(DEFAULT_FIELD_CONFIG[key] || {}) };
+          checkoutFieldConfig[key][prop] = !!value;
+          if (key === 'marketingOptIn' || key === 'coupon') checkoutFieldConfig[key].required = false;
+          if (prop === 'enabled' && !value) checkoutFieldConfig[key].required = false;
+          saveCheckoutFieldConfig();
+          renderCheckoutFieldAdmin();
+          if (document.getElementById('aura-checkout-panel')?.classList.contains('open')) renderCheckoutStep();
+          if (typeof showToast === 'function') showToast('Campos del checkout actualizados');
+        },
+      };
+      window.AuraCheckout = {
+        toggleSummary() {
+          checkoutState.detailsOpen = !checkoutState.detailsOpen;
+          saveCheckoutState();
+          renderCheckoutStep();
+        },
+        toggleCoupon() {
+          checkoutState.couponOpen = !checkoutState.couponOpen;
+          saveCheckoutState();
+          renderCheckoutStep();
+        },
+        setField(key, value, rerender) {
+          checkoutState[key] = value;
+          if (key === 'deliveryType' && value === 'retiro') {
+            checkoutState.zoneId = '';
+            checkoutState.address = checkoutState.address || '';
+          }
+          saveCheckoutState();
+          if (rerender) renderCheckoutStep();
+        },
+        selectZone(zoneId) {
+          const zone = getCheckoutShippingZones().find(item => item.id === zoneId);
+          if (!zone) return;
+          checkoutState.zoneId = zone.id;
+          checkoutState.deliveryType = 'envio';
+          checkoutState.locality = checkoutState.locality || zone.name;
+          saveCheckoutState();
+          if (typeof Cart !== 'undefined' && typeof Cart.selectZone === 'function') {
+            try { Cart.selectZone(zone.id); } catch (e) { }
+          }
+          renderCheckoutStep();
+        },
+        next() {
+          if (checkoutStep === 1) {
+            const error = validateDeliveryStep();
+            if (error) {
+              if (typeof showToast === 'function') showToast(error, true);
+              return;
+            }
+          }
+          checkoutStep = Math.min(2, checkoutStep + 1);
+          renderCheckoutStep();
+        },
+        prev() {
+          if (checkoutStep <= 0) {
+            closeAuraCheckout();
+            return;
+          }
+          checkoutStep = Math.max(0, checkoutStep - 1);
+          renderCheckoutStep();
+        },
+        updateQty(id, delta) {
+          if (typeof Cart !== 'undefined' && typeof Cart.updateQty === 'function') Cart.updateQty(id, delta);
+          syncCheckoutStateFromCart();
+          if (!getCheckoutItems().length) {
+            closeAuraCheckout();
+            return;
+          }
+          renderCheckoutStep();
+        },
+        removeItem(id) {
+          if (typeof Cart !== 'undefined' && typeof Cart.remove === 'function') Cart.remove(id);
+          syncCheckoutStateFromCart();
+          if (!getCheckoutItems().length) {
+            closeAuraCheckout();
+            return;
+          }
+          renderCheckoutStep();
+        },
+        finish: finishCheckout
+      };
+
+      function initAuraCheckoutLayer() {
+        checkoutFieldConfig = loadCheckoutFieldConfig();
+        patchRenderProducts();
+        patchCartAddItem();
+        patchCartButton();
+        patchCartOpen();
+        enhanceProductCards();
+        renderCheckoutFieldAdmin();
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAuraCheckoutLayer);
+      } else {
+        initAuraCheckoutLayer();
+      }
     })();
   </script>
 
