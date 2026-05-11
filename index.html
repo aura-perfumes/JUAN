@@ -16470,6 +16470,176 @@ body {
     flex-basis: 18px !important;
   }
 }
-</style></body>
+</style>
+<style id="aura-horizontal-autoscroll-css">
+/* aura-horizontal-autoscroll */
+.aura-dock-panel,
+.category-bar,
+#filter-chips {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scroll-behavior: smooth;
+  scrollbar-width: none !important;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+.aura-dock-panel::-webkit-scrollbar,
+.category-bar::-webkit-scrollbar,
+#filter-chips::-webkit-scrollbar {
+  display: none !important;
+}
+
+.aura-dock-panel.is-autoscrolling,
+.category-bar.is-autoscrolling,
+#filter-chips.is-autoscrolling {
+  scroll-snap-type: none !important;
+}
+
+.aura-dock-panel.user-interacting,
+.category-bar.user-interacting,
+#filter-chips.user-interacting {
+  scroll-behavior: auto !important;
+}
+</style>
+
+<script id="aura-horizontal-autoscroll-js">
+(function () {
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduceMotion) return;
+
+  const controllers = new WeakMap();
+  const resumeDelay = 3600;
+  const edgePause = 900;
+  const pxPerSecond = 16;
+
+  function getBars() {
+    return Array.from(new Set([
+      document.querySelector('.aura-dock-panel'),
+      document.getElementById('filter-chips'),
+      document.querySelector('.category-bar')
+    ].filter(Boolean)));
+  }
+
+  function hasOverflow(el) {
+    return el && el.scrollWidth > el.clientWidth + 6;
+  }
+
+  function setUserInteracting(el, active) {
+    el.classList.toggle('user-interacting', !!active);
+    if (active) el.classList.remove('is-autoscrolling');
+  }
+
+  function scheduleResume(state, delay) {
+    clearTimeout(state.resumeTimer);
+    state.resumeTimer = setTimeout(function () {
+      state.paused = false;
+      state.lastTs = 0;
+      state.waitUntil = performance.now() + 250;
+      setUserInteracting(state.el, false);
+    }, delay || resumeDelay);
+  }
+
+  function pauseForUser(state) {
+    state.paused = true;
+    setUserInteracting(state.el, true);
+    scheduleResume(state, resumeDelay);
+  }
+
+  function step(state, ts) {
+    const el = state.el;
+    if (!document.body.contains(el)) return;
+
+    if (!hasOverflow(el)) {
+      el.classList.remove('is-autoscrolling', 'user-interacting');
+      el.scrollLeft = 0;
+      state.lastTs = ts;
+      state.raf = requestAnimationFrame(function (next) { step(state, next); });
+      return;
+    }
+
+    if (!state.paused && ts >= state.waitUntil) {
+      el.classList.add('is-autoscrolling');
+      const max = Math.max(0, el.scrollWidth - el.clientWidth);
+      const delta = state.lastTs ? ((ts - state.lastTs) / 1000) * pxPerSecond : 0;
+
+      if (state.direction > 0) {
+        el.scrollLeft = Math.min(max, el.scrollLeft + delta);
+        if (el.scrollLeft >= max - 1) {
+          state.direction = -1;
+          state.waitUntil = ts + edgePause;
+        }
+      } else {
+        el.scrollLeft = Math.max(0, el.scrollLeft - delta);
+        if (el.scrollLeft <= 1) {
+          state.direction = 1;
+          state.waitUntil = ts + edgePause;
+        }
+      }
+    }
+
+    state.lastTs = ts;
+    state.raf = requestAnimationFrame(function (next) { step(state, next); });
+  }
+
+  function bindBar(el) {
+    if (!el || controllers.has(el)) return;
+
+    const state = {
+      el,
+      direction: 1,
+      paused: false,
+      waitUntil: performance.now() + 1200,
+      lastTs: 0,
+      resumeTimer: null,
+      raf: null
+    };
+
+    controllers.set(el, state);
+
+    ['pointerdown', 'touchstart', 'wheel'].forEach(function (eventName) {
+      el.addEventListener(eventName, function () { pauseForUser(state); }, { passive: true });
+    });
+
+    el.addEventListener('scroll', function () {
+      if (el.classList.contains('is-autoscrolling')) return;
+      pauseForUser(state);
+    }, { passive: true });
+
+    el.addEventListener('mouseenter', function () { pauseForUser(state); }, { passive: true });
+    el.addEventListener('mouseleave', function () { scheduleResume(state, 1400); }, { passive: true });
+
+    state.raf = requestAnimationFrame(function (ts) { step(state, ts); });
+  }
+
+  function initAutoscroll() {
+    getBars().forEach(bindBar);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAutoscroll, { once: true });
+  } else {
+    initAutoscroll();
+  }
+
+  window.addEventListener('resize', function () {
+    getBars().forEach(function (el) {
+      if (!hasOverflow(el)) el.scrollLeft = 0;
+      bindBar(el);
+    });
+  }, { passive: true });
+
+  const observer = new MutationObserver(function () {
+    initAutoscroll();
+  });
+
+  if (document.body) {
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
+  setTimeout(initAutoscroll, 500);
+  setTimeout(initAutoscroll, 1500);
+})();
+</script></body>
 
 </html>
