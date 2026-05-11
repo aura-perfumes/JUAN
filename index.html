@@ -7100,8 +7100,8 @@
             <svg viewBox="0 0 24 24"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/><path d="M9 21v-9h6v9"/></svg>
           </span>
         </button>
-        <button class="aura-dock-item" id="aura-dock-collection" type="button" onclick="AuraDock.goCollection()" aria-label="Coleccion">
-          <span class="aura-dock-label">Coleccion</span>
+        <button class="aura-dock-item" id="aura-dock-collection" type="button" onclick="AuraDock.goCollection()" aria-label="Bolsa">
+          <span class="aura-dock-label">Bolsa</span>
           <span class="aura-dock-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24"><path d="M6 2h12l3 5v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7l3-5z"/><path d="M3 7h18"/><path d="M9 11a3 3 0 0 0 6 0"/></svg>
           </span>
@@ -7118,8 +7118,8 @@
             <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/></svg>
           </span>
         </button>
-        <button class="aura-dock-item" id="aura-dock-about" type="button" onclick="AuraDock.goNosotros()" aria-label="Nosotros">
-          <span class="aura-dock-label">Nosotros</span>
+        <button class="aura-dock-item" id="aura-dock-about" type="button" onclick="AuraDock.goNosotros()" aria-label="Cuenta">
+          <span class="aura-dock-label">Cuenta</span>
           <span class="aura-dock-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24"><path d="M20 21a8 8 0 1 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
           </span>
@@ -7154,7 +7154,7 @@
         </div>
       </section>
       <div class="filter-bar">
-        <div class="filter-chips" id="filter-chips"></div>
+        <div class="filter-chips category-bar" id="filter-chips" aria-label="Categorias de productos"></div>
         <div class="search-wrap">
           <span class="search-icon">🔍</span>
           <input class="search-input" type="text" placeholder="Buscar por nombre…" oninput="App.search(this.value)"
@@ -7679,7 +7679,7 @@
         <div class="cart-row"><span>Subtotal</span><span>${subtotalHTML}</span></div>
         ${discountLines.map(({ promo, discount }) => 
           `<div class="cart-discount-row">
-            <span class="cart-discount-label">Descuento promo ${escapeHtml(promo.name)}</span>
+            <span class="cart-discount-label">Ahorraste $${discount.saved.toLocaleString('es-AR')} con ${escapeHtml(promo.name)}</span>
             <span class="cart-discount-val">− $${discount.saved.toLocaleString('es-AR')}</span>
           </div>`
         ).join('')}
@@ -10825,7 +10825,7 @@ const SugCenter = (() => {
             const label = row.querySelector('.cart-discount-label');
             if (!label) return;
             const raw = label.textContent || '';
-            const promoName = raw.replace(/^Descuento promo\s*/i, '').trim();
+            const promoName = raw.replace(/^Descuento promo\s*/i, '').replace(/^Ahorraste\s+\$?[\d\.,]+\s+con\s+/i, '').trim();
             const promo = (typeof getActivePromos === 'function' ? getActivePromos() : []).find(p => p.name === promoName);
             if (!promo || !promo.tiers?.length) return;
             const matched = Cart.items().reduce((sum, item) => {
@@ -13281,6 +13281,487 @@ body.modal-open .aura-dock-outer {
     height: 22px;
   }
 }
+/* BORDE GLOW PREMIUM PARA TARJETAS AURA */
+.product-grid .prod-card,
+#s-store .product-grid .prod-card {
+  --edge-proximity: 0;
+  --cursor-angle: 45deg;
+  --edge-sensitivity: 22;
+  --color-sensitivity: 40;
+  --border-radius: 18px;
+  --glow-padding: 28px;
+  --cone-spread: 22;
+  --card-bg: #F5F0E8;
+
+  position: relative !important;
+  isolation: isolate;
+  overflow: visible !important;
+  border-radius: var(--border-radius) !important;
+  border: 1px solid rgba(214, 182, 106, .18) !important;
+  background: var(--card-bg) !important;
+  transform: translate3d(0, 0, 0.01px);
+}
+
+.product-grid .prod-card::before,
+.product-grid .prod-card::after,
+#s-store .product-grid .prod-card::before,
+#s-store .product-grid .prod-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .35s ease;
+  z-index: -1;
+}
+
+.product-grid .prod-card::before,
+#s-store .product-grid .prod-card::before {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--card-bg) 0 100%) padding-box,
+    radial-gradient(at 20% 20%, rgba(214,182,106,.95), transparent 45%) border-box,
+    radial-gradient(at 80% 25%, rgba(255,240,180,.85), transparent 42%) border-box,
+    radial-gradient(at 50% 100%, rgba(12,15,26,.85), transparent 48%) border-box,
+    linear-gradient(135deg, rgba(214,182,106,.95), rgba(185,147,59,.9)) border-box;
+
+  mask-image:
+    conic-gradient(
+      from var(--cursor-angle) at center,
+      black calc(var(--cone-spread) * 1%),
+      transparent calc((var(--cone-spread) + 16) * 1%),
+      transparent calc((100 - var(--cone-spread) - 16) * 1%),
+      black calc((100 - var(--cone-spread)) * 1%)
+    );
+  -webkit-mask-image:
+    conic-gradient(
+      from var(--cursor-angle) at center,
+      black calc(var(--cone-spread) * 1%),
+      transparent calc((var(--cone-spread) + 16) * 1%),
+      transparent calc((100 - var(--cone-spread) - 16) * 1%),
+      black calc((100 - var(--cone-spread)) * 1%)
+    );
+}
+
+.product-grid .prod-card::after,
+#s-store .product-grid .prod-card::after {
+  inset: -18px;
+  background:
+    conic-gradient(
+      from var(--cursor-angle),
+      transparent 0deg,
+      rgba(214,182,106,.42) 35deg,
+      transparent 90deg,
+      transparent 260deg,
+      rgba(255,235,170,.32) 320deg,
+      transparent 360deg
+    );
+  filter: blur(18px);
+  opacity: 0;
+}
+
+.product-grid .prod-card:hover::before,
+.product-grid .prod-card.sweep-active::before,
+#s-store .product-grid .prod-card:hover::before,
+#s-store .product-grid .prod-card.sweep-active::before {
+  opacity: .95;
+  animation: none !important;
+}
+
+.product-grid .prod-card:hover::after,
+.product-grid .prod-card.sweep-active::after,
+#s-store .product-grid .prod-card:hover::after,
+#s-store .product-grid .prod-card.sweep-active::after {
+  opacity: .65;
+}
+
+.product-grid .prod-card > *,
+#s-store .product-grid .prod-card > * {
+  position: relative;
+  z-index: 2;
+}
+
+.product-grid .prod-card:hover,
+#s-store .product-grid .prod-card:hover {
+  transform: translateY(-5px) !important;
+  box-shadow:
+    0 18px 38px rgba(0,0,0,.16),
+    0 0 26px rgba(214,182,106,.18) !important;
+}
+/* aura-top-nav-upgrade */
+#s-store .store-nav,
+.store-nav {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  overflow: hidden !important;
+}
+
+#s-store .mobile-bottom-nav,
+.mobile-bottom-nav {
+  display: none !important;
+}
+
+.aura-dock-outer {
+  position: fixed !important;
+  top: 0 !important;
+  bottom: auto !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 3000 !important;
+
+  width: min(1180px, calc(100vw - 24px)) !important;
+  max-width: calc(100vw - 24px) !important;
+  height: auto !important;
+  min-height: 72px !important;
+
+  display: flex !important;
+  align-items: stretch !important;
+  justify-content: center !important;
+
+  pointer-events: none;
+}
+
+.aura-dock-panel {
+  pointer-events: auto;
+
+  width: 100% !important;
+  min-height: 72px !important;
+
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: .48rem !important;
+
+  padding: .68rem .85rem !important;
+  margin: 0 !important;
+
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none !important;
+
+  background: rgba(8, 12, 34, .86) !important;
+  border: 1px solid rgba(214, 182, 106, .22) !important;
+  border-top: none !important;
+  border-radius: 0 0 24px 24px !important;
+
+  box-shadow:
+    0 18px 45px rgba(0, 0, 0, .38),
+    inset 0 1px 0 rgba(255, 255, 255, .08) !important;
+
+  backdrop-filter: blur(18px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(140%) !important;
+}
+
+.aura-dock-panel::-webkit-scrollbar {
+  display: none !important;
+}
+
+.aura-dock-panel::before {
+  border-radius: inherit !important;
+}
+
+.aura-dock-item {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  height: 42px !important;
+  min-width: 0 !important;
+  padding: 0 .72rem !important;
+  gap: .38rem !important;
+
+  border-radius: 14px !important;
+  overflow: hidden !important;
+}
+
+.aura-dock-icon {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+.aura-dock-label {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  transform: none !important;
+  opacity: 1 !important;
+
+  display: block !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+
+  color: currentColor !important;
+  font-size: .66rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .08em !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+
+.aura-dock-item:hover,
+.aura-dock-item.active {
+  transform: translateY(0) !important;
+}
+
+.aura-dock-categories {
+  flex: 0 0 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: .45rem !important;
+  width: auto !important;
+  min-width: max-content !important;
+  margin: 0 0 0 .25rem !important;
+  padding: 0 0 0 .65rem !important;
+  border-left: 1px solid rgba(214, 182, 106, .18) !important;
+}
+
+.aura-dock-categories .chip {
+  flex: 0 0 auto !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  padding: 0 .86rem !important;
+  margin: 0 !important;
+  border-radius: 14px !important;
+  white-space: nowrap !important;
+}
+
+#s-store {
+  padding-top: 92px !important;
+}
+
+#s-store .store-body {
+  padding-top: 0 !important;
+  padding-bottom: 112px !important;
+}
+
+#s-store .store-body > .filter-bar {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+#s-store .store-body > .filter-bar .filter-chips:empty {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .aura-dock-outer {
+    top: 0 !important;
+    bottom: auto !important;
+    left: 0 !important;
+    transform: none !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    min-height: 72px !important;
+  }
+
+  .aura-dock-panel {
+    justify-content: flex-start !important;
+    border-radius: 0 0 20px 20px !important;
+    padding: .65rem .75rem !important;
+    gap: .42rem !important;
+  }
+
+  .aura-dock-item {
+    height: 40px !important;
+    padding: 0 .68rem !important;
+  }
+
+  .aura-dock-label {
+    display: block !important;
+    font-size: .62rem !important;
+  }
+
+  .aura-dock-categories .chip {
+    height: 40px !important;
+    min-height: 40px !important;
+    padding: 0 .78rem !important;
+  }
+
+  #s-store {
+    padding-top: 86px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .aura-dock-icon {
+    width: 17px !important;
+    height: 17px !important;
+  }
+
+  .aura-dock-item {
+    gap: .3rem !important;
+    padding: 0 .58rem !important;
+  }
+
+  .aura-dock-label {
+    font-size: .58rem !important;
+  }
+}
+/* aura-nav-category-separation */
+.aura-dock-outer {
+  position: fixed !important;
+  top: 0 !important;
+  bottom: auto !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 4000 !important;
+
+  width: min(860px, calc(100vw - 24px)) !important;
+  max-width: calc(100vw - 24px) !important;
+  min-height: 68px !important;
+
+  display: flex !important;
+  align-items: stretch !important;
+  justify-content: center !important;
+
+  pointer-events: none;
+}
+
+.aura-dock-panel {
+  pointer-events: auto;
+
+  width: auto !important;
+  min-height: 68px !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: .65rem !important;
+
+  padding: .7rem .9rem !important;
+  margin: 0 !important;
+
+  overflow: visible !important;
+
+  background: rgba(8,12,34,.82) !important;
+  border: 1px solid rgba(214,182,106,.18) !important;
+  border-top: none !important;
+  border-radius: 0 0 22px 22px !important;
+
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+
+  box-shadow:
+    0 16px 40px rgba(0,0,0,.35),
+    inset 0 1px 0 rgba(255,255,255,.06) !important;
+}
+
+.aura-dock-categories {
+  display: none !important;
+}
+
+.category-bar,
+#filter-chips.category-bar,
+#s-store .filter-chips.category-bar {
+  position: relative !important;
+  top: auto !important;
+  bottom: auto !important;
+  left: auto !important;
+  transform: none !important;
+  z-index: 2 !important;
+
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+
+  margin-top: 18px !important;
+  margin-bottom: 20px !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: .65rem !important;
+
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+
+  padding: .35rem 0 !important;
+  border: 0 !important;
+  border-left: 0 !important;
+
+  scrollbar-width: none !important;
+}
+
+.category-bar::-webkit-scrollbar,
+#filter-chips.category-bar::-webkit-scrollbar {
+  display: none !important;
+}
+
+.category-bar .chip,
+#filter-chips.category-bar .chip,
+#s-store .filter-chips.category-bar .chip {
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+}
+
+#s-store .store-body > .filter-bar {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: .65rem !important;
+
+  position: relative !important;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+#s-store .store-body > .filter-bar .search-wrap {
+  width: min(360px, 100%) !important;
+}
+
+#s-store,
+.store-body {
+  padding-top: 88px !important;
+}
+
+@media (max-width: 768px) {
+  .aura-dock-outer {
+    top: 0 !important;
+    left: 0 !important;
+    transform: none !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+  }
+
+  .aura-dock-panel {
+    width: 100% !important;
+    justify-content: flex-start !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: none !important;
+    border-radius: 0 0 20px 20px !important;
+    padding: .65rem .75rem !important;
+  }
+
+  .aura-dock-panel::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .category-bar,
+  #filter-chips.category-bar,
+  #s-store .filter-chips.category-bar {
+    margin-top: 14px !important;
+    margin-bottom: 18px !important;
+    gap: .5rem !important;
+    padding: .3rem 0 !important;
+  }
+
+  #s-store,
+  .store-body {
+    padding-top: 86px !important;
+  }
+}
+/* aura-hide-bag-nav-item */
+#aura-dock-collection {
+  display: none !important;
+}
 </style>
 
   <script>
@@ -13646,9 +14127,10 @@ body.modal-open .aura-dock-outer {
               </div>`;
             }).join('')}
             <div class="aura-summary-row"><span>Subtotal</span><strong>${money(totals.subtotal)}</strong></div>
-            ${(totals.promoDiscount + totals.couponDiscount) ? `<div class="aura-summary-row discount"><span>Descuento acumulado</span><strong>- ${money(totals.promoDiscount + totals.couponDiscount)}</strong></div>` : ''}
+            ${(totals.promoDiscount + totals.couponDiscount) ? `<div class="aura-summary-row discount checkout-discount-row"><span>Beneficio activo · Ahorraste ${money(totals.promoDiscount + totals.couponDiscount)} en esta compra</span><strong>- ${money(totals.promoDiscount + totals.couponDiscount)}</strong></div>` : ''}
             <div class="aura-summary-row"><span>Envio</span><strong>${totals.shipping ? money(totals.shipping) : auraEscape(totals.shippingLabel)}</strong></div>
             <div class="aura-summary-row total"><span>Total final</span><strong>${money(totals.total)}</strong></div>
+            ${(totals.promoDiscount + totals.couponDiscount) ? `<div class="checkout-saving-highlight">Tu ahorro total: ${money(totals.promoDiscount + totals.couponDiscount)}</div>` : ''}
           </div>` : '';
         return `<div class="aura-checkout-summary">
           <button class="aura-summary-toggle" type="button" onclick="AuraCheckout.toggleSummary()">
@@ -13662,7 +14144,7 @@ body.modal-open .aura-dock-outer {
       function renderCouponBlock() {
         if (!isFieldEnabled('coupon')) return '';
         return `<div class="aura-checkout-card">
-          <button class="aura-coupon-toggle" type="button" onclick="AuraCheckout.toggleCoupon()">Agregar cupon de descuento</button>
+          <button class="aura-coupon-toggle checkout-coupon-box" type="button" onclick="AuraCheckout.toggleCoupon()">🎁 ¿Tenés un cupón? Sumá más ahorro</button>
           ${checkoutState.couponOpen ? `<div class="aura-coupon-row">
             <input class="aura-input" id="aura-coupon-input" value="${auraEscape(checkoutState.couponCode || '')}" placeholder="AURA10" oninput="AuraCheckout.setField('couponCode', this.value)">
             <button class="aura-btn-secondary" type="button" onclick="applyCheckoutCoupon()">Aplicar</button>
@@ -13695,9 +14177,10 @@ body.modal-open .aura-dock-outer {
           </div>`).join('')}
           <div class="aura-summary-body" style="border-top:1px solid rgba(12,15,26,.08);padding:.75rem 0 0;margin-top:.25rem">
             <div class="aura-summary-row"><span>Subtotal</span><strong>${money(totals.subtotal)}</strong></div>
-            ${(totals.promoDiscount + totals.couponDiscount) ? `<div class="aura-summary-row discount"><span>Descuento acumulado</span><strong>- ${money(totals.promoDiscount + totals.couponDiscount)}</strong></div>` : ''}
+            ${(totals.promoDiscount + totals.couponDiscount) ? `<div class="aura-summary-row discount checkout-discount-row"><span>Beneficio activo · Ahorraste ${money(totals.promoDiscount + totals.couponDiscount)} en esta compra</span><strong>- ${money(totals.promoDiscount + totals.couponDiscount)}</strong></div>` : ''}
             <div class="aura-summary-row"><span>Envio</span><strong>${totals.shipping ? money(totals.shipping) : auraEscape(totals.shippingLabel)}</strong></div>
             <div class="aura-summary-row total"><span>Total</span><strong>${money(totals.total)}</strong></div>
+            ${(totals.promoDiscount + totals.couponDiscount) ? `<div class="checkout-saving-highlight">Tu ahorro total: ${money(totals.promoDiscount + totals.couponDiscount)}</div>` : ''}
           </div>
           <div class="aura-checkout-actions">
             <button class="aura-btn-secondary" type="button" data-action="close-checkout">Seguir comprando</button>
@@ -13770,6 +14253,7 @@ body.modal-open .aura-dock-outer {
           <div class="aura-checkout-card-title">Pago</div>
           <div class="aura-checkout-card-sub">No se cobra online. El pedido se finaliza por WhatsApp con el detalle completo.</div>
           <div class="aura-payment-total"><span>Total final</span><strong>${money(totals.total)}</strong></div>
+          ${(totals.promoDiscount + totals.couponDiscount) ? `<div class="checkout-saving-highlight">Tu ahorro total: ${money(totals.promoDiscount + totals.couponDiscount)}</div>` : ''}
           ${paymentChoices}
           <div class="aura-checkout-actions">
             <button class="aura-btn-secondary" type="button" onclick="AuraCheckout.prev()">Volver</button>
@@ -14865,6 +15349,271 @@ body.modal-open .aura-dock-outer {
     })();
   </script>
 
-</body>
+
+<style id="aura-cart-count-badge-css">
+/* aura-cart-count-badge */
+.cart-btn,
+.store-cart-btn,
+.cart-icon-wrap,
+#aura-dock-cart {
+  position: relative !important;
+}
+
+#aura-dock-cart {
+  overflow: visible !important;
+}
+
+.cart-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+
+  min-width: 18px;
+  height: 18px;
+
+  padding: 0 5px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 999px;
+
+  background: linear-gradient(
+    135deg,
+    #E2C987 0%,
+    #B9933B 100%
+  );
+
+  color: #1a1200;
+
+  font-size: .58rem;
+  font-weight: 800;
+  line-height: 1;
+
+  box-shadow:
+    0 2px 10px rgba(0,0,0,.25),
+    0 0 12px rgba(214,182,106,.35);
+
+  border: 1px solid rgba(255,255,255,.28);
+
+  transform: scale(0);
+  opacity: 0;
+
+  transition:
+    transform .22s cubic-bezier(.34,1.56,.64,1),
+    opacity .22s ease;
+
+  pointer-events: none;
+  z-index: 5;
+}
+
+.cart-count.visible {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.cart-count.bump {
+  animation: cartBadgePop .35s ease;
+}
+
+@keyframes cartBadgePop {
+  0% {
+    transform: scale(1);
+  }
+
+  45% {
+    transform: scale(1.35);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+</style>
+
+<script id="aura-cart-count-badge-js">
+(function () {
+  function readStoredCartCount() {
+    try {
+      const raw = localStorage.getItem('aura_cart') || localStorage.getItem('cart') || '[]';
+      const cart = JSON.parse(raw) || [];
+      return Array.isArray(cart)
+        ? cart.reduce((acc, item) => acc + Number(item.qty || 1), 0)
+        : 0;
+    } catch (error) {
+      return 0;
+    }
+  }
+
+  function getCartTotal() {
+    if (typeof Cart !== 'undefined' && typeof Cart.count === 'function') {
+      return Number(Cart.count() || 0);
+    }
+    return readStoredCartCount();
+  }
+
+  function ensureCartBadge() {
+    const cartButton = document.getElementById('aura-dock-cart') || document.querySelector('.store-cart-btn, .cart-btn');
+    if (!cartButton) return null;
+
+    let badge = cartButton.querySelector('.cart-count');
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'cart-count';
+      badge.setAttribute('aria-hidden', 'true');
+      cartButton.appendChild(badge);
+    }
+    return badge;
+  }
+
+  function updateCartBadge(options) {
+    const badge = ensureCartBadge();
+    if (!badge) return;
+
+    const total = getCartTotal();
+    const displayTotal = total > 99 ? '99+' : String(total);
+    const changed = badge.textContent !== displayTotal;
+
+    badge.textContent = displayTotal;
+    badge.classList.toggle('visible', total > 0);
+
+    if (total > 0 && (options?.bump || changed)) {
+      badge.classList.remove('bump');
+      void badge.offsetWidth;
+      badge.classList.add('bump');
+    } else if (total <= 0) {
+      badge.classList.remove('bump');
+    }
+  }
+
+  function patchCartBadgeUpdates() {
+    if (typeof Cart === 'undefined' || Cart.__auraCartCountBadgePatched) return;
+    Cart.__auraCartCountBadgePatched = true;
+
+    ['addItem', 'updateQty', 'remove'].forEach(function (method) {
+      if (typeof Cart[method] !== 'function') return;
+      const original = Cart[method];
+      Cart[method] = function () {
+        const result = original.apply(this, arguments);
+        setTimeout(function () { updateCartBadge({ bump: true }); }, 0);
+        return result;
+      };
+    });
+  }
+
+  function bootCartBadge() {
+    ensureCartBadge();
+    patchCartBadgeUpdates();
+    updateCartBadge({ bump: false });
+  }
+
+  window.updateCartBadge = updateCartBadge;
+  window.AuraUpdateCartBadge = updateCartBadge;
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootCartBadge, { once: true });
+  } else {
+    bootCartBadge();
+  }
+
+  window.addEventListener('storage', function (event) {
+    if (event.key === 'aura_cart' || event.key === 'cart') updateCartBadge({ bump: true });
+  });
+
+  setTimeout(bootCartBadge, 250);
+  setTimeout(bootCartBadge, 900);
+})();
+</script>
+<style id="aura-checkout-discount-upgrade-css">
+/* aura-checkout-discount-upgrade */
+.checkout-discount-row,
+.aura-summary-row.discount,
+.cart-discount-row {
+  background: linear-gradient(135deg, rgba(16,185,129,.12), rgba(214,182,106,.16)) !important;
+  border: 1px solid rgba(16,185,129,.28) !important;
+  border-radius: 14px !important;
+  padding: .7rem .9rem !important;
+  margin: .55rem 0 !important;
+  color: #0f8f5f !important;
+  font-weight: 800 !important;
+  box-shadow: 0 6px 18px rgba(16,185,129,.12) !important;
+}
+
+.checkout-discount-row::before,
+.aura-summary-row.discount::before,
+.cart-discount-row::before {
+  content: "✓";
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-right: .55rem;
+  border-radius: 999px;
+  background: rgba(16,185,129,.16);
+  color: #0f8f5f;
+  font-size: .76rem;
+  font-weight: 900;
+  flex: 0 0 auto;
+}
+
+.checkout-discount-row span,
+.cart-discount-row span,
+.aura-summary-row.discount span,
+.cart-discount-label,
+.cart-discount-val {
+  color: #0f8f5f !important;
+  font-weight: 800 !important;
+}
+
+.checkout-discount-row strong,
+.aura-summary-row.discount strong,
+.cart-discount-row strong,
+.cart-discount-val {
+  color: #0f8f5f !important;
+  font-size: .98rem !important;
+  font-weight: 900 !important;
+}
+
+.checkout-saving-highlight {
+  margin-top: .55rem;
+  padding: .65rem .8rem;
+  border-radius: 12px;
+  background: rgba(214,182,106,.16);
+  border: 1px solid rgba(214,182,106,.28);
+  color: #9b741f;
+  font-size: .82rem;
+  font-weight: 800;
+  text-align: center;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.52);
+}
+
+.checkout-coupon-box,
+.coupon-box,
+.aura-coupon-toggle {
+  width: 100%;
+  background: linear-gradient(135deg, rgba(214,182,106,.12), rgba(255,255,255,.95)) !important;
+  border: 1px solid rgba(214,182,106,.45) !important;
+  border-radius: 16px !important;
+  box-shadow:
+    0 8px 22px rgba(214,182,106,.12),
+    inset 0 1px 0 rgba(255,255,255,.8) !important;
+  color: #B9933B !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease !important;
+}
+
+.checkout-coupon-box:hover,
+.coupon-box:hover,
+.aura-coupon-toggle:hover {
+  transform: translateY(-2px);
+  border-color: rgba(214,182,106,.68) !important;
+  box-shadow:
+    0 12px 28px rgba(214,182,106,.2),
+    0 0 18px rgba(214,182,106,.18) !important;
+}
+</style></body>
 
 </html>
