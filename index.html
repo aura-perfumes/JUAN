@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AURA - Perfumería</title>
+  <meta name="description" content="AURA" />
+  <meta name="title" content="AURA" />
+  <meta property="og:title" content="AURA" />
+  <meta property="og:site_name" content="AURA" />
+  <meta property="og:description" content="AURA" />
+  <meta name="twitter:title" content="AURA" />
+  <meta name="twitter:description" content="AURA" />
+  <link rel="manifest" href="site.webmanifest" />
+  <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png" />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="icon-512.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="512" />
+  <meta property="og:image:height" content="512" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="icon-512.png" />
+  <meta name="theme-color" content="#080C22" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="AURA - Perfumería" />
+
+  
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Montserrat:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+
+<body>
+  <div id="app-splash" aria-live="polite" aria-label="Cargando aplicación">
+    <div class="app-splash-inner">
+      <div class="app-splash-spinner" aria-hidden="true"></div>
+      <div class="app-splash-brand">AURA</div>
+      <div class="app-splash-sub">Perfumería</div>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 1: PORTAL GATE ══════════════════ -->
+  <div id="s-portal" class="screen active">
+    <div class="portal-bottle" id="portal-media"><span class="portal-bottle-fallback">🫙</span></div>
+    <div class="portal-shell">
+      <div class="portal-brand anim d1">
+        <div class="portal-brand-name" id="portal-brand-name">AURA</div>
+        <div class="portal-brand-rule"></div>
+        <div class="portal-brand-tagline">Maison de Parfum · Est. 2009</div>
+      </div>
+      <div class="portal-cards">
+        <button class="portal-card gold portal-card-main anim d2" data-aura-on-click="App.goStore()" aria-label="Ingresar como cliente">
+          <div class="portal-card-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <path d="M16 10a4 4 0 01-8 0"/>
+            </svg>
+          </div>
+          <div class="portal-card-title">Cliente</div>
+          <div class="portal-card-sub">Explorar tienda →</div>
+        </button>
+      </div>
+    </div>
+    <button class="portal-staff-fab" data-aura-on-click="App.goStaff()" aria-label="Acceso personal" title="Acceso personal">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="8" r="4"></circle>
+        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"></path>
+      </svg>
+    </button>
+  </div>
+
+  <!-- ══ SCREEN 2: STAFF PASSWORD GATE ══════════ -->
+  <div id="s-staff-gate" class="screen">
+    <div class="staff-card anim">
+      <div class="staff-lock">🔓</div>
+      <h2 class="staff-title">Acceso Personal</h2>
+      <p class="staff-sub">Ingresa la contraseña de acceso</p>
+      <div class="password-wrap">
+        <input type="password" class="password-input" id="staff-pwd" placeholder="••••••••••" value="" />
+        <button class="password-eye" data-aura-on-click="App.togglePwd()" id="eye-btn">👁</button>
+      </div>
+      <button class="btn-ingresar" data-aura-on-click="App.staffLogin()">Ingresar →</button>
+      <button class="btn-cancel" data-aura-on-click="App.show('s-portal')">Cancelar</button>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 3: ADMIN DASHBOARD ══════════════ -->
+  <div id="s-dashboard" class="screen">
+    <!-- Sidebar -->
+    <nav class="dash-sidebar">
+      <div class="dash-logo">AURA <span class="dash-logo-dot"></span></div>
+      <div class="dash-nav">
+        <button class="dash-nav-item active" data-aura-on-click="App.dashNav(this,'panel')">
+          <span class="nav-icon">🏠</span>Panel
+        </button>
+        <button class="dash-nav-item" data-aura-on-click="App.dashNav(this,'inventario')">
+          <span class="nav-icon">📦</span>Inventario
+        </button>
+        <button class="dash-nav-item" data-aura-on-click="App.dashNav(this,'pedidos')">
+          <span class="nav-icon">🛍</span>Pedidos
+          <span class="nav-badge"></span>
+        </button>
+        <button class="dash-nav-item" data-aura-on-click="App.dashNav(this,'clientes')">
+          <span class="nav-icon">👤</span>Clientes
+        </button>
+        <button class="dash-nav-item" data-aura-on-click="App.dashNav(this,'analiticas')">
+          <span class="nav-icon">📊</span>Analíticas
+        </button>
+        <button class="dash-nav-item" data-aura-on-click="App.dashNav(this,'config')">
+          <span class="nav-icon">⚙️</span>Configuración
+        </button>
+      </div>
+    </nav>
+    <!-- Main -->
+    <main class="dash-main" id="dash-main">
+      <!-- ── PANEL ───────────────────────────────── -->
+      <div id="sec-panel">
+        <div class="dash-topbar">
+          <div>
+            <button class="dash-back" data-aura-on-click="App.show('s-portal')">← Volver al portal</button>
+            <h1 class="dash-page-title display">Panel General</h1>
+            <p class="dash-page-sub">Bienvenida, Julianna — resumen de tu Maison.</p>
+          </div>
+          <div class="dash-actions">
+            <button class="btn-outline" data-aura-on-click="Dash.exportCSV()">Descargar reporte</button>
+            <button class="btn-dark" data-aura-on-click="Dash.openAddProduct()">+ Agregar fragancia</button>
+          </div>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">Ingresos totales</div>
+            <div class="kpi-value display" id="kpi-ingresos">$0</div>
+            <div class="kpi-sub" id="kpi-ingresos-sub">↗ Sin datos aún</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">SKUs en stock</div>
+            <div class="kpi-value display" id="kpi-skus">0</div>
+            <div class="kpi-sub">↻ Actualizado en tiempo real</div>
+          </div>
+          <div class="kpi-card dark">
+            <div class="kpi-label">Valoración inventario</div>
+            <div class="kpi-value display" id="kpi-valor">$0</div>
+            <div class="kpi-sub">✓ Totalmente asegurado</div>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3 class="chart-title display">Ingresos</h3>
+            <div class="chart-tabs">
+              <button class="chart-tab active" data-aura-on-click="App.chartPeriod('Semanal',this)">Semanal</button>
+              <button class="chart-tab" data-aura-on-click="App.chartPeriod('Mensual',this)">Mensual</button>
+              <button class="chart-tab" data-aura-on-click="App.chartPeriod('Anual',this)">Anual</button>
+            </div>
+          </div>
+          <canvas id="revenue-chart" height="90"></canvas>
+        </div>
+      </div>
+
+      <!-- ── INVENTARIO ─────────────────────────── -->
+      <div id="sec-inventario" style="display:none">
+        <div class="dash-topbar">
+          <div>
+            <button class="dash-back" data-aura-on-click="App.show('s-portal')">← Volver al portal</button>
+            <h1 class="dash-page-title display">Inventario</h1>
+            <p class="dash-page-sub">Gestión del catálogo de fragancias.</p>
+          </div>
+          <div class="dash-actions">
+            <button class="btn-dark" data-aura-on-click="Dash.openAddProduct()">+ Nueva fragancia</button>
+          </div>
+        </div>
+        <div class="section-card">
+          <div class="section-card-hdr">
+            <span class="section-card-title display">Colección AURA</span>
+            <div class="sc-search"><span class="sc-search-icon">🔍</span><input type="text" placeholder="Buscar..."
+                data-aura-on-input="Dash.filterInventory(this.value)" id="inv-search" /></div>
+          </div>
+          <div class="filter-row" id="inv-filter-row"></div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Fragancia</th>
+                  <th>Categoría</th>
+                  <th>Stock</th>
+                  <th>Precio</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="inv-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PEDIDOS ────────────────────────────── -->
+      <div id="sec-pedidos" style="display:none">
+        <div class="dash-topbar">
+          <div>
+            <button class="dash-back" data-aura-on-click="App.show('s-portal')">← Volver al portal</button>
+            <h1 class="dash-page-title display">Pedidos</h1>
+            <p class="dash-page-sub">Seguimiento de órdenes de clientes.</p>
+          </div>
+          <div class="dash-actions">
+            <button class="btn-outline" data-aura-on-click="Dash.exportCSV()">Exportar CSV</button>
+          </div>
+        </div>
+        <div class="section-card">
+          <div class="section-card-hdr">
+            <span class="section-card-title display">Órdenes Recientes</span>
+            <div class="sc-search"><span class="sc-search-icon">🔍</span><input type="text"
+                placeholder="Buscar pedidos..." data-aura-on-input="Dash.filterPedidos(this.value)" id="ped-search" /></div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Nº Pedido</th>
+                  <th>Cliente</th>
+                  <th>Productos</th>
+                  <th>Total</th>
+                  <th>Envío</th>
+                  <th>Fecha</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="ped-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── CLIENTES ───────────────────────────── -->
+      <div id="sec-clientes" style="display:none">
+        <div class="dash-topbar">
+          <div>
+            <button class="dash-back" data-aura-on-click="App.show('s-portal')">← Volver al portal</button>
+            <h1 class="dash-page-title display">Clientes</h1>
+            <p class="dash-page-sub">Base de datos de clientes.</p>
+          </div>
+        </div>
+        <div class="section-card">
+          <div class="section-card-hdr">
+            <span class="section-card-title display">Directorio</span>
+            <div class="sc-search"><span class="sc-search-icon">🔍</span><input type="text"
+                placeholder="Buscar cliente..." data-aura-on-input="Dash.filterClientes(this.value)" id="cli-search" /></div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Teléfono</th>
+                  <th>Pedidos</th>
+                  <th>Total gastado</th>
+                  <th>Último pedido</th>
+                  <th>Segmento</th>
+                </tr>
+              </thead>
+              <tbody id="cli-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ANALÍTICAS ─────────────────────────── -->
+      <div id="sec-analiticas" style="display:none">
+        <div class="dash-topbar">
+          <div>
+            <button class="dash-back" data-aura-on-click="App.show('s-portal')">← Volver al portal</button>
+            <h1 class="dash-page-title display">Analíticas</h1>
+            <p class="dash-page-sub">Métricas de rendimiento y comportamiento del sitio.</p>
+          </div>
+        </div>
+        <div class="kpi-grid" style="grid-template-columns:repeat(auto-fill,minmax(170px,1fr))">
+          <div class="kpi-card">
+            <div class="kpi-label">Ticket promedio</div>
+            <div class="kpi-value display" id="an-ticket">$0</div>
+            <div class="kpi-sub" id="an-ticket-sub">Sin datos aún</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Pedidos / mes</div>
+            <div class="kpi-value display" id="an-pedmes">0</div>
+            <div class="kpi-sub" id="an-pedmes-sub">Sin datos aún</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Clientes activos</div>
+            <div class="kpi-value display" id="an-clientes">0</div>
+            <div class="kpi-sub">Base actual</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Agotados</div>
+            <div class="kpi-value display" id="an-agotados">0</div>
+            <div class="kpi-sub">Fragancias sin stock</div>
+          </div>
+        </div>
+        <div class="analytics-charts">
+          <div class="chart-card-sm">
+            <div class="chart-header">
+              <h3 class="chart-title display">Ingresos Mensuales</h3>
+            </div>
+            <canvas id="anal-line-chart" height="130"></canvas>
+          </div>
+          <div class="chart-card-sm">
+            <div class="chart-header">
+              <h3 class="chart-title display">Por Familia</h3>
+            </div>
+            <canvas id="anal-donut-chart" height="180"></canvas>
+          </div>
+        </div>
+        <div class="chart-card-sm heatmap-card">
+          <div class="chart-header">
+            <h3 class="chart-title display">Mapa de calor del sitio</h3>
+          </div>
+          <div class="heatmap-grid" id="heatmap-grid"></div>
+        </div>
+      </div>
+
+      <!-- ── CONFIGURACIÓN ──────────────────────── -->
+      <div id="sec-config" style="display:none">
+        <div class="dash-topbar">
+          <div>
+            <button class="dash-back" data-aura-on-click="App.show('s-portal')">← Volver al portal</button>
+            <h1 class="dash-page-title display">Configuración</h1>
+            <p class="dash-page-sub">Ajustes reorganizados por áreas para evitar el scroll largo.</p>
+          </div>
+        </div>
+
+        <div class="config-shell">
+          <aside class="config-tabs" id="config-tabs-nav">
+            <button class="config-tab active" type="button" data-config-tab="general" data-aura-on-click="Dash.switchConfigTab('general', this)">
+              <span class="config-tab-title">1. General</span>
+              <span class="config-tab-sub">Marca, portada, logo, colores y ajustes globales</span>
+            </button>
+            <button class="config-tab" type="button" data-config-tab="catalogo" data-aura-on-click="Dash.switchConfigTab('catalogo', this)">
+              <span class="config-tab-title">2. Productos / Catálogo</span>
+              <span class="config-tab-sub">Categorías, productos, precios y disponibilidad</span>
+            </button>
+            <button class="config-tab" type="button" data-config-tab="promociones" data-aura-on-click="Dash.switchConfigTab('promociones', this)">
+              <span class="config-tab-title">3. Promociones</span>
+              <span class="config-tab-sub">Descuentos, promos activas y banners comerciales</span>
+            </button>
+            <button class="config-tab" type="button" data-config-tab="pedidos" data-aura-on-click="Dash.switchConfigTab('pedidos', this)">
+              <span class="config-tab-title">4. Pedidos</span>
+              <span class="config-tab-sub">Flujo de trabajo, entrega y operación del pedido</span>
+            </button>
+            <button class="config-tab" type="button" data-config-tab="ticket" data-aura-on-click="Dash.switchConfigTab('ticket', this)">
+              <span class="config-tab-title">5. Ticket / WhatsApp</span>
+              <span class="config-tab-sub">Número, mensaje editable y vista previa en tiempo real</span>
+            </button>
+            <button class="config-tab" type="button" data-config-tab="usuarios" data-aura-on-click="Dash.switchConfigTab('usuarios', this)">
+              <span class="config-tab-title">6. Usuarios / Personal</span>
+              <span class="config-tab-sub">Accesos, roles y seguridad administrativa</span>
+            </button>
+            <button class="config-tab" type="button" data-config-tab="notificaciones" data-aura-on-click="Dash.switchConfigTab('notificaciones', this)">
+              <span class="config-tab-title">7. Notificaciones</span>
+              <span class="config-tab-sub">Alertas del sistema y automatizaciones disponibles</span>
+            </button>
+          </aside>
+
+          <div class="config-panels">
+            <section class="config-panel active" data-config-panel="general">
+              <div class="config-section">
+                <div class="config-section-title">🏷 General — Identidad de la tienda</div>
+                <div class="config-grid">
+                  <div>
+                    <label class="config-label">Nombre del negocio / ticket</label>
+                    <input class="config-input" type="text" id="cfg-wa-name" value="AURA — Tienda Online" data-aura-on-input="const t=document.getElementById('cfg-wa-name-ticket'); if(t) t.value=this.value" />
+                    <div class="config-hint">Se usa como referencia de la tienda dentro del mensaje y la operación.</div>
+                  </div>
+                  <div>
+                    <label class="config-label">Idioma / formato</label>
+                    <input class="config-input" type="text" value="Español (AR)" readonly />
+                    <div class="config-hint">Formato actual del archivo y moneda configurada.</div>
+                  </div>
+                </div>
+                <button class="btn-dark" style="margin-top:1rem;border-radius:99px;padding:.55rem 1.4rem;font-size:.7rem;letter-spacing:.08em" data-aura-on-click="Dash.saveWA()">Guardar datos generales</button>
+              </div>
+
+              <div class="config-section">
+                <div class="config-section-title">📣 Banner superior</div>
+                <div style="margin-bottom:.75rem">
+                  <label class="config-label">Texto del banner</label>
+                  <input class="config-input" type="text" id="cfg-banner-txt" value="🌸 Nueva colección Otoño/Invierno 2026 — Envío gratis (Cipolletti o Neuquén) en pedidos mayores a $50.000" />
+                </div>
+                <div class="color-row">
+                  <div class="color-wrap">
+                    <label class="config-label">Color de texto</label>
+                    <input class="color-input" type="color" id="cfg-banner-fg" value="#C9A84C" />
+                  </div>
+                </div>
+                <div class="toggle-row" style="margin-top:.75rem">
+                  <label class="toggle"><input type="checkbox" id="cfg-banner-on" checked /><span class="toggle-slider"></span></label>
+                  <span class="toggle-label">Mostrar banner</span>
+                </div>
+                <button class="btn-dark" style="margin-top:.9rem;border-radius:99px;padding:.55rem 1.4rem;font-size:.7rem;letter-spacing:.08em" data-aura-on-click="Dash.applyBanner()">Aplicar banner</button>
+              </div>
+
+              <div class="config-section">
+                <div class="config-section-title">🏠 Portada de la tienda</div>
+                <div class="config-hint" style="margin-bottom:.9rem">Todo lo que ve el cliente al ingresar.</div>
+
+                <div style="margin-bottom:1rem">
+                  <label class="config-label">Logo para portada mobile (imagen)</label>
+                  <div style="display:flex;gap:.75rem;align-items:flex-start;flex-wrap:wrap">
+                    <div>
+                      <div class="hero-logo-preview" id="hero-logo-preview">Sin logo cargado</div>
+                      <label class="file-pill" style="margin-top:.4rem">Cargar logo
+                        <input type="file" id="cfg-hero-logo" accept="image/*" data-aura-on-change="Dash.loadHeroLogo(event)" />
+                      </label>
+                    </div>
+                    <div style="flex:1;min-width:180px">
+                      <div class="config-hint" style="margin-bottom:.5rem">Este logo reemplaza el texto "AURA" en la portada mobile.</div>
+                      <div class="toggle-row">
+                        <label class="toggle"><input type="checkbox" id="cfg-hero-logo-on" data-aura-on-change="Dash.applyPortada()" /><span class="toggle-slider"></span></label>
+                        <span class="toggle-label">Mostrar logo en portada mobile</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:.75rem;margin-top:.6rem;flex-wrap:wrap">
+                    <button class="btn-dark" style="border-radius:99px;padding:.45rem 1.1rem;font-size:.68rem" data-aura-on-click="Dash.applyHeroLogo()">Aplicar logo</button>
+                    <button class="btn-outline" style="border-radius:99px;padding:.45rem 1.1rem;font-size:.68rem" data-aura-on-click="Dash.clearHeroLogo()">Quitar logo</button>
+                  </div>
+                </div>
+
+                <div class="subtle-divider"></div>
+
+                <div style="margin-bottom:.75rem;margin-top:.75rem">
+                  <label class="config-label">Encabezado (texto pequeño superior)</label>
+                  <div class="toggle-row" style="margin-bottom:.4rem">
+                    <label class="toggle"><input type="checkbox" id="cfg-hero-enc-on" checked data-aura-on-change="Dash.applyPortada()" /><span class="toggle-slider"></span></label>
+                    <span class="toggle-label" style="font-size:.72rem">Mostrar encabezado</span>
+                  </div>
+                  <input class="config-input" type="text" id="cfg-hero-enc" value="Nueva colección Otoño/Invierno 2026 — Envío gratis (Cipolletti o Neuquén) en pedidos mayores a $50.000" />
+                </div>
+                <div style="margin-bottom:.75rem">
+                  <label class="config-label">Título principal</label>
+                  <div class="toggle-row" style="margin-bottom:.4rem">
+                    <label class="toggle"><input type="checkbox" id="cfg-hero-title-on" checked data-aura-on-change="Dash.applyPortada()" /><span class="toggle-slider"></span></label>
+                    <span class="toggle-label" style="font-size:.72rem">Mostrar título</span>
+                  </div>
+                  <input class="config-input" type="text" id="cfg-hero-title" value="Elevamos Tu Esencia" />
+                  <div class="config-hint">La última palabra se renderiza en cursiva dorada automáticamente.</div>
+                </div>
+                <div style="margin-bottom:.75rem">
+                  <label class="config-label">Descripción / subtítulo</label>
+                  <div class="toggle-row" style="margin-bottom:.4rem">
+                    <label class="toggle"><input type="checkbox" id="cfg-hero-sub-on" checked data-aura-on-change="Dash.applyPortada()" /><span class="toggle-slider"></span></label>
+                    <span class="toggle-label" style="font-size:.72rem">Mostrar subtítulo</span>
+                  </div>
+                  <textarea class="config-textarea" id="cfg-hero-sub">Fragancias que hablan antes que vos.</textarea>
+                </div>
+                <div style="margin-bottom:.75rem">
+                  <label class="config-label">Texto secundario (opcional)</label>
+                  <div class="toggle-row" style="margin-bottom:.4rem">
+                    <label class="toggle"><input type="checkbox" id="cfg-hero-extra-on" data-aura-on-change="Dash.applyPortada()" /><span class="toggle-slider"></span></label>
+                    <span class="toggle-label" style="font-size:.72rem">Mostrar texto secundario</span>
+                  </div>
+                  <input class="config-input" type="text" id="cfg-hero-extra" placeholder="Texto adicional debajo del subtítulo" />
+                </div>
+                <button class="btn-dark" style="border-radius:99px;padding:.55rem 1.4rem;font-size:.7rem;letter-spacing:.08em" data-aura-on-click="Dash.applyPortada()">Aplicar portada</button>
+              </div>
+
+              <div class="config-section">
+                <div class="config-section-title">🖼 Fondos e imagen principal</div>
+                <div class="config-grid">
+                  <div>
+                    <label class="config-label">Fondo editable de portada</label>
+                    <div class="hero-preview" id="hero-bg-preview">Vista previa de fondo principal</div>
+                    <div style="margin-top:.75rem;display:flex;flex-direction:column;gap:.55rem">
+                      <input class="config-input" type="url" id="cfg-hero-bg-url" placeholder="https://i.imgur.com/ejemplo.jpg" data-aura-on-input="Dash.previewHeroBgUrl(this.value)" />
+                      <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+                        <button class="btn-dark" style="border-radius:99px;padding:.55rem 1.4rem;font-size:.7rem" type="button" data-aura-on-click="Dash.applyHeroBgUrl()">Aplicar fondo</button>
+                        <button class="btn-outline" style="border-radius:99px;padding:.55rem 1.4rem;font-size:.7rem" type="button" data-aura-on-click="Dash.clearHeroBackground()">Quitar fondo</button>
+                      </div>
+                    </div>
+                    <input type="hidden" id="cfg-hero-bg" />
+                  </div>
+                  <div>
+                    <label class="config-label">Imagen de fondo del panel inicial</label>
+                    <div class="img-preview" id="portal-img-preview" style="margin-bottom:.75rem">Vista previa del panel inicial</div>
+                    <input class="config-input" type="url" id="cfg-portal-img-url" placeholder="https://i.imgur.com/ejemplo.jpg" data-aura-on-input="Dash.previewPortalImgUrl(this.value)" style="margin-bottom:.6rem" />
+                    <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+                      <button class="btn-dark" style="border-radius:99px;padding:.55rem 1.4rem;font-size:.7rem" data-aura-on-click="Dash.applyPortalImgUrl()">Aplicar imagen</button>
+                      <button class="btn-outline" style="border-radius:99px;padding:.55rem 1.4rem;font-size:.7rem" data-aura-on-click="Dash.clearPortalImage()">Quitar imagen</button>
+                    </div>
+                    <input type="hidden" id="cfg-portal-img" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="config-section">
+                <div class="config-section-title">📖 Página "Nosotros"</div>
+                <div class="config-hint" style="margin-bottom:.9rem">Contenido del modal visible en la tienda.</div>
+                <div style="margin-bottom:.75rem">
+                  <label class="config-label">Título del modal</label>
+                  <input class="config-input" type="text" id="cfg-nos-title" value="AURA Perfumería · Desde 2025" />
+                </div>
+                <div style="margin-bottom:.75rem">
+                  <label class="config-label">Párrafo 1</label>
+                  <textarea class="config-textarea" id="cfg-nos-p1">AURA nació tanto de una pasión por la perfumería como del buen trato con la gente. Desde el comienzo, la idea fue clara: construir un espacio donde cada fragancia tenga intención y cada cliente reciba una atención genuina, cercana y personalizada.</textarea>
+                </div>
+                <div style="margin-bottom:.75rem">
+                  <label class="config-label">Párrafo 2</label>
+                  <textarea class="config-textarea" id="cfg-nos-p2">Esa es la esencia de AURA: combinar el encanto de la perfumería con una experiencia humana, cálida y de confianza. Nos mueve el detalle, la dedicación y el compromiso de asesorar con criterio y honestidad.</textarea>
+                </div>
+                <div class="stat-grid-3">
+                  <div><label class="config-label">Valor 1</label><input class="config-input" type="text" id="cfg-s1v" value="1+" /></div>
+                  <div><label class="config-label">Valor 2</label><input class="config-input" type="text" id="cfg-s2v" value="100%" /></div>
+                  <div><label class="config-label">Valor 3</label><input class="config-input" type="text" id="cfg-s3v" value="Único" /></div>
+                  <div><label class="config-label">Etiqueta 1</label><input class="config-input" type="text" id="cfg-s1l" value="Años" /></div>
+                  <div><label class="config-label">Etiqueta 2</label><input class="config-input" type="text" id="cfg-s2l" value="Originales" /></div>
+                  <div><label class="config-label">Etiqueta 3</label><input class="config-input" type="text" id="cfg-s3l" value="Marca propia" /></div>
+                </div>
+                <button class="btn-dark" style="border-radius:99px;padding:.55rem 1.4rem;font-size:.7rem;letter-spacing:.08em" data-aura-on-click="Dash.saveNosotros()">Guardar Nosotros</button>
+              </div>
+            </section>
+
+            <section class="config-panel" data-config-panel="catalogo">
+              <div class="config-section">
+                <div class="config-section-title">🗂 Categorías y subcategorías</div>
+                <div class="taxonomy-layout">
+                  <div class="tax-box">
+                    <label class="config-label">Agregar categoría</label>
+                    <div class="tax-row">
+                      <input class="config-input" type="text" id="tax-new-cat" placeholder="Ej: Cítricos" />
+                      <button class="btn-dark" type="button" data-aura-on-click="Dash.addCategory()">Agregar</button>
+                    </div>
+                    <div class="tax-hint">Estas categorías alimentan filtros, inventario y alta de productos.</div>
+                    <div class="tax-list" id="tax-cat-list"></div>
+                  </div>
+                  <div class="tax-box">
+                    <label class="config-label">Agregar subcategoría</label>
+                    <div class="tax-row">
+                      <select class="config-input" id="tax-parent-cat"></select>
+                      <input class="config-input" type="text" id="tax-new-sub" placeholder="Ej: Ámbar" />
+                      <button class="btn-dark" type="button" data-aura-on-click="Dash.addSubcategory()">Agregar</button>
+                    </div>
+                    <div class="tax-hint">Cada subcategoría queda vinculada a una categoría principal.</div>
+                    <div class="tax-list" id="tax-sub-list"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="config-section">
+                <div class="config-section-title">📦 Gestión del catálogo</div>
+                <div class="config-link-grid">
+                  <div class="config-link-card">
+                    <div class="config-link-title">Inventario y productos</div>
+                    <div class="config-link-text">La edición completa de productos, precios, stock, imágenes y disponibilidad sigue funcionando igual en la sección Inventario.</div>
+                    <button class="btn-dark" style="border-radius:99px;padding:.55rem 1.15rem;font-size:.68rem" type="button" data-aura-on-click="Dash.goToSection('inventario')">Ir a Inventario</button>
+                  </div>
+                  <div class="config-link-card">
+                    <div class="config-link-title">Filtros y estructura del catálogo</div>
+                    <div class="config-link-text">Desde esta pestaña se conserva la organización de categorías y subcategorías que usa todo el sistema.</div>
+                    <button class="btn-outline" style="border-radius:99px;padding:.55rem 1.15rem;font-size:.68rem" type="button" data-aura-on-click="Dash.renderTaxonomy()">Actualizar listas</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="config-panel" data-config-panel="promociones">
+              <div class="config-section">
+                <div class="config-section-title">🔥 Gestión de promos</div>
+                <div class="config-hint" style="margin-bottom:.9rem">Configurá fragancias disponibles, activá o desactivá cada promo y guardá los cambios.</div>
+                <button class="btn-outline" style="border-radius:99px;padding:.55rem 1.4rem;font-size:.7rem;margin-bottom:1rem" data-aura-on-click="PromoAdmin.openNew()">+ Nueva promo</button>
+                <div id="promo-admin-list"></div>
+                <button class="btn-dark" style="border-radius:99px;padding:.55rem 1.4rem;font-size:.7rem" data-aura-on-click="PromoAdmin.save()">Guardar cambios en promos</button>
+              </div>
+
+              <div class="config-section">
+                <div class="config-section-title">📣 Banner comercial</div>
+                <div class="config-link-grid">
+                  <div class="config-link-card">
+                    <div class="config-link-title">Banner de tienda</div>
+                    <div class="config-link-text">El banner superior forma parte de la estrategia comercial y se mantiene dentro de Configuración.</div>
+                    <button class="btn-dark" style="border-radius:99px;padding:.55rem 1.15rem;font-size:.68rem" type="button" data-aura-on-click="Dash.switchConfigTab('general')">Abrir pestaña General</button>
+                  </div>
+                  <div class="config-link-card">
+                    <div class="config-link-title">Promos aplicadas al carrito</div>
+                    <div class="config-link-text">Las promociones activas siguen impactando el carrito y los mensajes de WhatsApp sin recargar la página.</div>
+                    <button class="btn-outline" style="border-radius:99px;padding:.55rem 1.15rem;font-size:.68rem" type="button" data-aura-on-click="PromoAdmin.render()">Refrescar promos</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="config-panel" data-config-panel="pedidos">
+              <div class="config-section">
+                <div class="config-section-title">🚚 Dirección de retiro y entrega</div>
+                <div class="config-grid">
+                  <div class="config-full">
+                    <label class="config-label">Dirección del local *</label>
+                    <input class="config-input" type="text" id="cfg-dir" value="A coordinar" />
+                  </div>
+                  <div>
+                    <label class="config-label">Horarios</label>
+                    <input class="config-input" type="text" id="cfg-hs" value="Lun-Vie 10-19hs, Sáb 10-14hs" />
+                  </div>
+                  <div>
+                    <label class="config-label">Email de contacto</label>
+                    <input class="config-input" type="email" id="cfg-email" value="hola@aura.com" />
+                  </div>
+                </div>
+                <button class="btn-dark" style="margin-top:1rem;border-radius:99px;padding:.55rem 1.4rem;font-size:.7rem;letter-spacing:.08em" data-aura-on-click="Dash.saveTienda()">Guardar tienda</button>
+              </div>
+
+              <div class="config-section">
+                <div class="config-section-title">🚚 Métodos de envío</div>
+                <div class="config-hint" style="margin-bottom:.9rem">Activá uno, el otro o ambos. Si ambos están activos, el cliente elige en el carrito.</div>
+                <div class="config-grid">
+                  <div>
+                    <label class="config-label" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem">
+                      <span>Calculador por GPS</span>
+                      <input type="checkbox" id="cfg-ship-gps-on" />
+                    </label>
+                    <div class="config-hint">Usa ubicación o dirección y calcula por distancia.</div>
+                  </div>
+                  <div>
+                    <label class="config-label" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem">
+                      <span>Zonas fijas</span>
+                      <input type="checkbox" id="cfg-ship-zone-on" />
+                    </label>
+                    <div class="config-hint">Cipolletti $1.500 · Neuquén $3.000 · Fernández Oro $3.000</div>
+                  </div>
+                  <div class="config-full">
+                    <button class="btn-dark" data-aura-on-click="Dash.saveShippingMethods()">Guardar métodos de envío</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="config-section">
+                <div class="config-section-title">🧾 Flujo de pedidos</div>
+                <div class="config-link-grid">
+                  <div class="config-link-card">
+                    <div class="config-link-title">Estados y confirmación</div>
+                    <div class="config-link-text">La confirmación, denegación y edición del pedido siguen operando desde la sección Pedidos del panel.</div>
+                    <button class="btn-dark" style="border-radius:99px;padding:.55rem 1.15rem;font-size:.68rem" type="button" data-aura-on-click="Dash.goToSection('pedidos')">Ir a Pedidos</button>
+                  </div>
+                  <div class="config-link-card">
+                    <div class="config-link-title">Operación en tiempo real</div>
+                    <div class="config-link-text">El carrito, el registro de órdenes y el flujo de trabajo no cambian. Solo se reorganizó la interfaz de configuración.</div>
+                    <button class="btn-outline" style="border-radius:99px;padding:.55rem 1.15rem;font-size:.68rem" type="button" data-aura-on-click="Dash.renderPedidos()">Refrescar pedidos</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="config-panel" data-config-panel="ticket">
+              <div class="config-section">
+                <div class="config-section-title">📱 WhatsApp — Número de salida</div>
+                <div class="config-grid">
+                  <div>
+                    <label class="config-label">Número de WhatsApp *</label>
+                    <input class="config-input" type="text" id="cfg-wa-num" value="5492942444236" placeholder="549... sin espacios ni +" />
+                    <div class="config-hint">Código de país + número sin espacios ni signo +</div>
+                  </div>
+                  <div>
+                    <label class="config-label">Nombre de referencia</label>
+                    <input class="config-input" type="text" id="cfg-wa-name-ticket" value="AURA — Tienda Online" data-aura-on-input="const t=document.getElementById('cfg-wa-name'); if(t) t.value=this.value" />
+                    <div class="config-hint">Se sincroniza con el nombre usado en la tienda.</div>
+                  </div>
+                </div>
+                <button class="btn-dark" style="margin-top:1rem;border-radius:99px;padding:.55rem 1.4rem;font-size:.7rem;letter-spacing:.08em" data-aura-on-click="Dash.saveWA()">Guardar WhatsApp</button>
+              </div>
+
+              <div class="config-section">
+                <div class="config-section-title">🧾 Ticket / WhatsApp — Mensaje editable</div>
+                <div class="config-grid">
+                  <div>
+                    <label class="config-label">Template del mensaje</label>
+                    <textarea class="config-textarea" id="cfg-wa-template" style="min-height:320px" data-aura-on-input="Dash.renderWATemplatePreview()"></textarea>
+                    <div class="config-hint">Podés editar texto libre y mantener variables dinámicas entre llaves.</div>
+                    <div class="config-vars">
+                      <span class="config-var-chip">{tienda}</span>
+                      <span class="config-var-chip">{pedido_id}</span>
+                      <span class="config-var-chip">{nombre}</span>
+                      <span class="config-var-chip">{telefono}</span>
+                      <span class="config-var-chip">{productos}</span>
+                      <span class="config-var-chip">{subtotal}</span>
+                      <span class="config-var-chip">{metodo_envio}</span>
+                      <span class="config-var-chip">{envio}</span>
+                      <span class="config-var-chip">{descuentos}</span>
+                      <span class="config-var-chip">{total}</span>
+                      <span class="config-var-chip">{direccion}</span>
+                      <span class="config-var-chip">{notas}</span>
+                    </div>
+                    <button class="btn-dark" style="margin-top:1rem;border-radius:99px;padding:.55rem 1.4rem;font-size:.7rem;letter-spacing:.08em" data-aura-on-click="Dash.saveWATemplate()">Guardar mensaje</button>
+                  </div>
+                  <div>
+                    <label class="config-label">Vista previa en tiempo real</label>
+                    <div class="config-preview-box" id="cfg-wa-preview"></div>
+                    <div class="config-hint">Esta vista previa usa datos de ejemplo y el mismo motor que el envío real por WhatsApp.</div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="config-panel" data-config-panel="usuarios">
+              <div class="config-section">
+                <div class="config-section-title">👥 Usuarios / Personal</div>
+                <div class="config-link-grid">
+                  <div class="config-link-card">
+                    <div class="config-link-title">Acceso administrativo</div>
+                    <div class="config-link-text">El acceso del panel sigue funcionando desde la contraseña del staff y el comportamiento general del archivo no cambia.</div>
+                    <button class="btn-outline" style="border-radius:99px;padding:.55rem 1.15rem;font-size:.68rem" type="button" data-aura-on-click="Dash.goToSection('clientes')">Ir a Clientes</button>
+                  </div>
+                  <div class="config-link-card">
+                    <div class="config-link-title">Roles y permisos</div>
+                    <div class="config-link-text">No existen controles avanzados de roles dentro de este archivo. Esta pestaña agrupa ese bloque para futuras ampliaciones sin mezclarlo con otras opciones.</div>
+                    <div class="config-hint" style="margin-top:0">Se conserva el funcionamiento actual.</div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="config-panel" data-config-panel="notificaciones">
+              <div class="config-section">
+                <div class="config-section-title">🔔 Notificaciones</div>
+                <div class="config-help-list">
+                  <div class="config-help-item">Las notificaciones actualmente dependen del flujo del carrito, del registro interno del pedido y del envío manual por WhatsApp.</div>
+                  <div class="config-help-item">No hay un módulo independiente de alertas automáticas en este archivo. Esta pestaña deja la estructura preparada sin alterar el comportamiento existente.</div>
+                  <div class="config-help-item">La nota del carrito y el mensaje editable de WhatsApp ya quedan centralizados en la pestaña Ticket / WhatsApp.</div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ══ SCREEN 4: CLIENT STORE ═════════════════ -->
+  <div id="s-store" class="screen" style="flex-direction:column">
+    <!-- Nav -->
+    <nav class="store-nav">
+      <div class="store-nav-mobile-left">
+        <button class="store-exit" data-aura-on-click="App.show('s-portal')"
+          style="font-size:.65rem;font-weight:600;letter-spacing:.06em;color:rgba(255,255,255,.4);cursor:pointer;background:none;border:none;display:flex;align-items:center;gap:.3rem">&larr;
+          Salir</button>
+      </div>
+      <div class="store-logo" id="store-logo-nav">AURA <span class="store-logo-dot"></span></div>
+      <div class="store-nav-links">
+        <button class="store-nav-link"
+          data-aura-on-click="document.getElementById('s-store').scrollTo({top:document.getElementById('product-grid').offsetTop-80,behavior:'smooth'})">Colección</button>
+        <button class="store-nav-link" id="nav-link-sugerencias" data-aura-on-click="SugCenter.openTab()">✦ Sugerencias<span class="sug-nav-badge">¡NUEVO!</span></button>
+        <button class="store-nav-link" data-aura-on-click="App.openNosotros()">Nosotros</button>
+        <button class="store-nav-link" data-aura-on-click="App.openNosotros()">Contacto</button>
+      </div>
+      <div class="store-nav-right">
+        <button class="store-nav-icon" id="fav-nav-btn" title="Favoritos" data-aura-on-click="Favorites.openPanel()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+          <span id="fav-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--gold);color:#1a1200;font-size:.45rem;font-weight:800;border-radius:99px;padding:.15rem .35rem;min-width:1.1em;text-align:center;line-height:1.4"></span>
+        </button>
+        <button class="store-cart-btn" type="button" data-action="open-checkout" title="Carrito">
+          <span class="cart-icon-wrap">🛍<span class="cart-badge" id="cart-badge"></span></span>
+        </button>
+        <button class="store-exit store-exit-desktop" data-aura-on-click="App.show('s-portal')">← Salir</button>
+      </div>
+    </nav>
+    <!-- Hero -->
+    <div class="store-hero" id="store-hero">
+      <div class="store-hero-inner">
+        <p class="store-announce" id="store-announce">Nueva colección otoño/invierno 2026 — Envío gratis en pedidos
+          mayores a $50.000</p>
+        <img class="store-hero-logo-mobile" id="store-hero-logo" src="" alt="AURA" style="display:none" />
+        <h1 class="store-hero-h1 display" id="store-hero-title">Elevamos<br><em>Tu Esencia</em></h1>
+        <p class="store-hero-sub" id="store-hero-sub">Fragancias que hablan antes que vos.</p>
+        <p class="store-hero-extra" id="store-hero-extra"
+          style="display:none;font-size:.75rem;color:rgba(255,255,255,.4);margin-top:.2rem;letter-spacing:.04em"></p>
+        <div class="store-hero-cta">
+          <button class="btn-hero-primary"
+            data-aura-on-click="document.getElementById('s-store').scrollTo({top:document.getElementById('product-grid').offsetTop-80,behavior:'smooth'})">Ver
+            colección</button>
+          <button class="btn-hero-secondary" data-aura-on-click="App.openNosotros()">Nosotros</button>
+        </div>
+      </div>
+    </div>
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-bottom-nav" id="mobile-bottom-nav">
+      <!-- INICIO -->
+      <button class="mob-nav-btn active" id="mob-nav-home"
+        data-aura-on-click="MobNav.goHome(this)">
+        <svg class="mob-nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z"/>
+          <path d="M9 21V12h6v9"/>
+        </svg>
+        Inicio
+      </button>
+      <!-- PROMOS -->
+      <button class="mob-nav-btn" id="mob-nav-promos"
+        data-aura-on-click="MobNav.goPromos(this)">
+        <svg class="mob-nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20.6 13.4 12.9 21a2 2 0 0 1-2.8 0L3 13.9V4h9.9l7.7 7.1a1.6 1.6 0 0 1 0 2.3z"/>
+          <circle cx="8" cy="8" r="1.5"/>
+        </svg>
+        Promos
+      </button>
+      <!-- PARA VOS -->
+      <button class="mob-nav-btn" id="mob-nav-sug"
+        data-aura-on-click="MobNav.goSugerencias(this)">
+        <svg class="mob-nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M15 4V2m0 20v-2M4 15H2m20 0h-2M5.6 5.6 4.2 4.2m14.2 14.2-1.4-1.4M5.6 18.4 4.2 19.8M18.4 5.6l-1.4 1.4"/>
+          <circle cx="12" cy="12" r="4"/>
+        </svg>
+        Para vos
+      </button>
+      <!-- CARRITO -->
+      <button class="mob-nav-btn" id="mob-nav-cart" type="button" data-action="open-checkout">
+        <svg class="mob-nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <path d="M16 10a4 4 0 01-8 0"/>
+        </svg>
+        Carrito
+      </button>
+    </nav>
+    <nav class="aura-dock-outer" id="aura-dock-nav" aria-label="Navegacion principal AURA">
+      <div class="aura-dock-panel">
+        <button class="aura-dock-item active" id="aura-dock-home" type="button" data-aura-on-click="AuraDock.goHome()" aria-label="Inicio">
+          <span class="aura-dock-label">Inicio</span>
+          <span class="aura-dock-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/><path d="M9 21v-9h6v9"/></svg>
+          </span>
+        </button>
+        <button class="aura-dock-item" id="aura-dock-collection" type="button" data-aura-on-click="AuraDock.goCollection()" aria-label="Bolsa">
+          <span class="aura-dock-label">Bolsa</span>
+          <span class="aura-dock-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M6 2h12l3 5v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7l3-5z"/><path d="M3 7h18"/><path d="M9 11a3 3 0 0 0 6 0"/></svg>
+          </span>
+        </button>
+        <button class="aura-dock-item" id="aura-dock-sug" type="button" data-aura-on-click="AuraDock.goSugerencias()" aria-label="Sugerencias">
+          <span class="aura-dock-label">Sugerencias</span>
+          <span class="aura-dock-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M12 2v3"/><path d="M12 19v3"/><path d="M4.22 4.22l2.12 2.12"/><path d="M17.66 17.66l2.12 2.12"/><path d="M2 12h3"/><path d="M19 12h3"/><path d="M4.22 19.78l2.12-2.12"/><path d="M17.66 6.34l2.12-2.12"/><circle cx="12" cy="12" r="4"/></svg>
+          </span>
+        </button>
+        <button class="aura-dock-item" id="aura-dock-favorites" type="button" data-aura-on-click="AuraDock.goFavorites()" aria-label="Favoritos">
+          <span class="aura-dock-label">Favoritos</span>
+          <span class="aura-dock-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </span>
+        </button>
+        <button class="aura-dock-item" id="aura-dock-about" type="button" data-aura-on-click="AuraDock.goNosotros()" aria-label="Cuenta">
+          <span class="aura-dock-label">Cuenta</span>
+          <span class="aura-dock-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M20 21a8 8 0 1 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+          </span>
+        </button>
+        <button class="aura-dock-item" id="aura-dock-cart" type="button" data-action="open-checkout" data-aura-on-click="AuraDock.goCart()" aria-label="Carrito">
+          <span class="aura-dock-label">Carrito</span>
+          <span class="aura-dock-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          </span>
+        </button>
+      </div>
+    </nav>
+    <!-- Body -->
+    <div class="store-body">
+
+      <!-- AURA PREMIUM LOCATION MAP -->
+      <section class="aura-location-section aura-category-map-hook" id="aura-location-section" aria-label="Ubicacion de AURA Perfumeria">
+        <div class="aura-location-map-card" aria-label="Planeta fijo con marcador de Cipolletti, Rio Negro">
+          <div class="aura-location-static-bg" aria-hidden="true"></div>
+
+          <div class="aura-location-marker" id="aura-location-marker">
+            <span class="marker-wave wave-one"></span>
+            <span class="marker-wave wave-two"></span>
+            <span class="marker-glow"></span>
+            <span class="marker-core"></span>
+
+            <div class="marker-label" id="aura-marker-label">
+              <strong id="aura-marker-label-title">Cipolletti, Rio Negro</strong>
+              <small id="aura-marker-label-sub">Argentina · Patagonia</small>
+            </div>
+          </div>
+        </div>
+      </section>
+      <div class="filter-bar">
+        <div class="filter-chips category-bar" id="filter-chips" aria-label="Categorias de productos"></div>
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input class="search-input" type="text" placeholder="Buscar por nombre…" data-aura-on-input="App.search(this.value)"
+            id="search-input" />
+        </div>
+      </div>
+      <span class="store-products-label" id="store-products-label">Colección</span>
+      <div class="product-grid" id="product-grid"></div>
+    </div>
+  </div>
+
+  <!-- ══ CENTRAL DE SUGERENCIAS ════════════════ -->
+  <div id="sec-sugerencias" style="display:none;padding:1.5rem 2rem 3rem;max-width:1200px;margin:0 auto;width:100%;box-sizing:border-box">
+    <!-- Botón volver -->
+    <button class="sug-back-btn" data-aura-on-click="SugCenter.closeTab()">
+      ← Volver a la colección
+    </button>
+    <!-- Hero de búsqueda -->
+    <div class="sug-hero">
+      <span class="sug-hero-icon">🔮</span>
+      <h2 class="sug-hero-title">Central de <em>Sugerencias</em></h2>
+      <p class="sug-hero-sub">Escribí el nombre de un perfume que ya tenés y te recomendamos fragancias similares disponibles en AURA.</p>
+      <div class="sug-search-wrap">
+        <input
+          id="sug-input"
+          class="sug-input"
+          type="text"
+          placeholder="Ej: Odyssey Tyrant, Rose Velours…"
+          autocomplete="off"
+          data-aura-on-keydown="if(event.key==='Enter')SugCenter.search()"
+        />
+        <button class="sug-btn" data-aura-on-click="SugCenter.search()">Buscar →</button>
+      </div>
+    </div>
+    <!-- Resultados -->
+    <div id="sug-results">
+      <div class="sug-no-query">
+        <span class="sug-no-query-ico">🌸</span>
+        <p class="sug-no-query-txt">Ingresá el nombre de un perfume que ya tenés<br>y descubrí qué más te puede gustar.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- CART -->
+  <div id="cart-overlay" class="cart-overlay" data-action="close-checkout"></div>
+  <div id="cart-panel" class="cart-panel" role="dialog" aria-label="Carrito">
+    <div class="cart-hdr">
+      <span class="cart-title">Tu Pedido</span>
+      <button class="cart-x checkout-close" type="button" data-action="close-checkout" aria-label="Cerrar">&#x2715;</button>
+    </div>
+    <div class="cart-body" id="cart-body"></div>
+    <div class="cart-ftr">
+      <div class="ship-calc-box" id="ship-calc-box" style="display:none">
+        <div class="ship-calc-label">&#x25B8; Envío</div>
+        <div id="ship-method-selector" style="display:none;margin-bottom:.85rem"></div>
+        <div id="ship-zone-box" style="display:none"></div>
+        <div id="ship-gps-box" style="display:none">
+          <div class="ship-calc-label" style="margin-bottom:.45rem">Calculador por GPS o dirección</div>
+          <div class="ship-calc-row">
+            <div class="ship-addr-wrap">
+              <input id="cust-addr" type="text" placeholder="Tu dirección..." autocomplete="off"
+                data-aura-on-input="Cart.onAddrInput(this.value)" />
+              <div id="addr-suggestions"></div>
+            </div>
+            <button id="calc-btn" data-aura-on-click="Cart.calcDelivery()">Calcular</button>
+          </div>
+        </div>
+        <div id="ship-status"></div>
+      </div>
+      <div class="cart-totals" id="cart-totals" style="display:none"></div>
+      <div class="order-fields" id="order-fields" style="display:none">
+        <input class="order-input" id="order-name" type="text" placeholder="Nombre y apellido" />
+        <input class="order-input" id="order-phone" type="text" placeholder="Teléfono" />
+        <textarea class="order-input full" id="order-notes" rows="2"
+          placeholder="Aclaraciones del pedido o entrega"></textarea>
+      </div>
+      <div class="order-note" id="order-note" style="display:none">Al confirmar por WhatsApp, el pedido también se
+        registra automáticamente en el panel administrativo.</div>
+      <button class="btn-wa-cart" id="btn-wa-cart" disabled data-action="open-checkout">&#x1F4F2; Finalizar por
+        WhatsApp</button>
+      <button class="cart-continue" type="button" data-action="close-checkout">Seguir comprando</button>
+    </div>
+  </div>
+
+  <!-- ══ NOSOTROS MODAL ═══════════════════════════ -->
+  <div class="nosotros-overlay" id="nosotros-modal" data-aura-on-click="if(event.target===this)App.closeNosotros()">
+    <div class="nosotros-modal">
+      <div class="nosotros-hdr">
+        <div class="nosotros-hdr-title display" id="nos-modal-title">AURA Perfumería · Desde 2025</div>
+        <button class="nosotros-x" data-aura-on-click="App.closeNosotros()">✕</button>
+      </div>
+      <div class="nosotros-body">
+        <p class="nosotros-para" id="nos-modal-p1">AURA nació tanto de una pasión por la perfumería como del buen trato
+          con la gente. Desde el comienzo, la idea fue clara: construir un espacio donde cada fragancia tenga intención
+          y cada cliente reciba una atención genuina, cercana y personalizada.</p>
+        <p class="nosotros-para" id="nos-modal-p2">Esa es la esencia de AURA: combinar el encanto de la perfumería con
+          una experiencia humana, cálida y de confianza. Nos mueve el detalle, la dedicación y el compromiso de asesorar
+          con criterio y honestidad.</p>
+        <div class="nosotros-stats">
+          <div class="nosotros-stat">
+            <div class="nosotros-stat-val" id="nos-s1v">1+</div>
+            <div class="nosotros-stat-lbl" id="nos-s1l">Años</div>
+          </div>
+          <div class="nosotros-stat">
+            <div class="nosotros-stat-val" id="nos-s2v">100%</div>
+            <div class="nosotros-stat-lbl" id="nos-s2l">Originales</div>
+          </div>
+          <div class="nosotros-stat">
+            <div class="nosotros-stat-val" id="nos-s3v">Único</div>
+            <div class="nosotros-stat-lbl" id="nos-s3l">Marca propia</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ ADD PRODUCT MODAL ════════════════════════ -->
+  <div class="ap-overlay" id="ap-modal" data-aura-on-click="if(event.target===this)Dash.closeAddProduct()">
+    <div class="ap-modal">
+      <div class="ap-hdr">
+        <div class="ap-hdr-title display" id="ap-title">Nueva Fragancia</div>
+        <button class="ap-x" data-aura-on-click="Dash.closeAddProduct()">✕</button>
+      </div>
+      <div class="ap-body">
+        <input type="hidden" id="ap-edit-id" />
+        <div class="ap-grid">
+          <div class="ap-full">
+            <label class="config-label">Nombre *</label>
+            <input class="config-input" type="text" id="ap-name" placeholder="Ej: Rose Éternelle" />
+          </div>
+          <div>
+            <label class="config-label">Categoría principal *</label>
+            <select class="config-input" id="ap-cat"></select>
+          </div>
+          <div>
+            <label class="config-label">Subcategoría</label>
+            <select class="config-input" id="ap-cat2"></select>
+          </div>
+          <div>
+            <label class="config-label">Precio ($) *</label>
+            <input class="config-input" type="number" id="ap-price" placeholder="12500" />
+          </div>
+          <div>
+            <label class="config-label">Stock</label>
+            <input class="config-input" type="number" id="ap-stock" placeholder="5" value="5" />
+          </div>
+          <div>
+            <label class="config-label">Emoji</label>
+            <input class="config-input" type="text" id="ap-emoji" placeholder="🌸" maxlength="4" />
+          </div>
+          <div class="ap-full">
+            <label class="config-label">Descripción breve</label>
+            <textarea class="config-textarea" id="ap-desc"
+              placeholder="Descripción corta para la ficha del perfume"></textarea>
+          </div>
+          <div>
+            <label class="config-label">Badge (opcional)</label>
+            <input class="config-input" type="text" id="ap-badge" placeholder="Últimas unidades" />
+          </div>
+          <div>
+            <label class="config-label">Tamaño visible</label>
+            <input class="config-input" type="text" id="ap-size" placeholder="35 ml · EDP" value="35 ml · EDP" />
+          </div>
+          <div class="ap-full">
+            <div class="ap-url-grid">
+              <div>
+                <label class="config-label">URL imagen principal</label>
+                <input class="config-input" type="url" id="ap-img1-url" placeholder="https://i.imgur.com/ejemplo.jpg"
+                  data-aura-on-input="Dash.previewUrl(this.value,'ap-img1-preview-url')" />
+                <div class="img-preview" id="ap-img1-preview-url">Vista previa</div>
+              </div>
+              <div>
+                <label class="config-label">URL imagen secundaria</label>
+                <input class="config-input" type="url" id="ap-img2-url" placeholder="https://i.imgur.com/ejemplo2.jpg"
+                  data-aura-on-input="Dash.previewUrl(this.value,'ap-img2-preview-url')" />
+                <div class="img-preview" id="ap-img2-preview-url">Vista previa</div>
+              </div>
+            </div>
+            <div class="url-hint">Pegá el link directo de la imagen (Imgur, Google Drive, Cloudinary, etc.)</div>
+            <!-- Hidden inputs kept for backward compat -->
+            <input type="hidden" id="ap-img1" />
+            <input type="hidden" id="ap-img2" />
+            <div style="display:none" id="ap-img1-preview"></div>
+            <div style="display:none" id="ap-img2-preview"></div>
+            <div style="display:none" id="img-mode-url"></div>
+            <div style="display:none" id="img-mode-file"></div>
+          </div>
+        </div>
+        <div style="margin-top:1.1rem;display:flex;gap:.75rem">
+          <button class="btn-dark" style="flex:1;border-radius:10px;padding:.7rem" data-aura-on-click="Dash.saveProduct()">Guardar
+            fragancia</button>
+          <button class="btn-outline" style="border-radius:10px;padding:.7rem"
+            data-aura-on-click="Dash.closeAddProduct()">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="detail-overlay" id="detail-modal" data-aura-on-click="if(event.target===this)App.closeProductDetail()">
+    <div class="detail-modal">
+      <div class="detail-grid">
+        <div class="detail-media">
+          <div class="detail-main-img" id="detail-main-img">🌸</div>
+          <div class="detail-thumbs" id="detail-thumbs"></div>
+        </div>
+        <div class="detail-info">
+          <div class="detail-top">
+            <div>
+              <div class="detail-meta" id="detail-meta">Familia</div>
+              <div class="detail-name" id="detail-name">Fragancia</div>
+            </div>
+            <button class="detail-close" data-aura-on-click="App.closeProductDetail()">Cerrar</button>
+          </div>
+          <div class="detail-price" id="detail-price">$0</div>
+          <div class="detail-desc" id="detail-desc">Descripción</div>
+          <div class="subtle-divider"></div>
+          <div class="detail-desc" id="detail-size">35 ml · EDP</div>
+          <div class="detail-actions">
+            <button class="detail-cta" id="detail-add-btn">Agregar al carrito</button>
+            <button class="btn-outline" type="button" data-aura-on-click="App.closeProductDetail()">Seguir viendo</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  
+
+  
+  
+  
+  
+  
+  
+
+<!-- ══ FAVORITES — Sistema de favoritos con localStorage ══════════════ -->
+
+<!-- ══ MOBNAV — Navegación inferior mobile ══════════════════════════════ -->
+
+  
+<!-- ══ PROMO COMBO MODAL ═══════════════════════════ -->
+  <div class="promo-overlay" id="promo-modal" data-aura-on-click="if(event.target===this)PromoModal.close()">
+    <div class="promo-modal">
+      <div class="promo-modal-hdr">
+        <div class="promo-modal-title display" id="promo-modal-title">Armá tu combo</div>
+        <button class="promo-modal-x" data-aura-on-click="PromoModal.close()">✕</button>
+      </div>
+      <div class="promo-modal-body" id="promo-modal-body"></div>
+      <div class="promo-modal-ftr">
+        <button class="btn-dark promo-confirm-btn" id="promo-confirm-btn" data-aura-on-click="PromoModal.addToCart()">🛍 Agregar al carrito</button>
+        <span class="promo-total-label" id="promo-total-label"></span>
+      </div>
+    </div>
+  </div>
+
+<!-- ══ CENTRAL DE SUGERENCIAS — JavaScript ══════════════════════════════ -->
+
+  <div class="promo-assign-overlay" id="promo-assign-modal" data-aura-on-click="if(event.target===this)PromoAssign.close()">
+    <div class="promo-assign-modal">
+      <div class="promo-assign-hdr">
+        <div class="promo-assign-title display" id="promo-assign-title">Promos</div>
+        <button class="promo-assign-x" data-aura-on-click="PromoAssign.close()">✕</button>
+      </div>
+      <div class="promo-assign-body" id="promo-assign-body"></div>
+      <div class="promo-assign-ftr">
+        <button class="btn-dark" style="border-radius:10px;padding:.75rem 1rem" data-aura-on-click="PromoAssign.saveCurrent()">Guardar asignaciones</button>
+      </div>
+    </div>
+  </div>
+
+  
+
+  
+
+  <div id="add-toast" class="add-toast" aria-live="polite"></div>
+
+  
+
+  
+
+  <div class="modal-overlay" id="order-edit-modal" data-aura-on-click="if(event.target===this)Dash.closeOrderEdit()">
+    <div class="checkout-modal order-edit-modal-card">
+      <div class="cko-hdr">
+        <div>
+          <div class="cko-hdr-title">Editar pedido</div>
+          <div class="cko-hdr-sub" id="ord-edit-code">PED-000000</div>
+        </div>
+        <button class="cko-x" type="button" data-aura-on-click="Dash.closeOrderEdit()">✕</button>
+      </div>
+      <div class="order-edit-body">
+        <input type="hidden" id="ord-edit-id" />
+        <div class="order-edit-grid">
+          <div>
+            <label class="config-label">Cliente</label>
+            <input class="config-input" id="ord-edit-name" type="text" />
+          </div>
+          <div>
+            <label class="config-label">Teléfono</label>
+            <input class="config-input" id="ord-edit-phone" type="text" />
+          </div>
+          <div style="grid-column:1/-1">
+            <label class="config-label">Dirección</label>
+            <input class="config-input" id="ord-edit-address" type="text" />
+          </div>
+          <div>
+            <label class="config-label">Envío</label>
+            <input class="config-input" id="ord-edit-delivery" type="number" min="0" step="1" />
+          </div>
+          <div>
+            <label class="config-label">Estado</label>
+            <select class="config-input" id="ord-edit-status">
+              <option value="Pendiente de confirmación">Pendiente de confirmación</option>
+              <option value="Confirmado">Confirmado</option>
+              <option value="Denegado">Denegado</option>
+            </select>
+          </div>
+          <div style="grid-column:1/-1">
+            <label class="config-label">Notas</label>
+            <textarea class="config-input" id="ord-edit-notes" rows="4" style="resize:vertical"></textarea>
+          </div>
+        </div>
+        <div class="order-edit-products-box">
+          <div class="order-edit-products-title">Productos del pedido</div>
+          <div id="ord-edit-items"></div>
+        </div>
+        <div class="order-edit-actions">
+          <button class="btn-outline" type="button" data-aura-on-click="Dash.closeOrderEdit()">Cancelar</button>
+          <button class="btn-dark" type="button" data-aura-on-click="Dash.saveOrderEdit()">Guardar cambios</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-database-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-storage-compat.js" defer></script>
+  <script src="js/splash.js" defer></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+
+</html>
